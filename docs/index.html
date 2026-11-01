@@ -37,7 +37,7 @@
   .botao.principal { background: var(--destaque); color: #1b1b1b; border-color: #b9812a; }
 
   /* ---------- Cena ---------- */
-  .cena { position: relative; border: 4px solid var(--borda); background: #000; aspect-ratio: 320 / 150; }
+  .cena { position: relative; border: 4px solid var(--borda); background: #000; aspect-ratio: 256 / 180; }
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; }
   .camada { position: absolute; inset: 0; pointer-events: none; }
   .balao { position: absolute; transform: translate(-50%, -100%); background: #fffdf3; color: #1b1b1b; border: 2px solid #1b1b1b;
@@ -128,7 +128,7 @@
   </header>
 
   <div class="cena">
-    <canvas id="tela" width="320" height="150" aria-label="Escritório e sala de descanso em pixel art com os cinco agentes"></canvas>
+    <canvas id="tela" width="256" height="180" aria-label="Escritório e sala de descanso em pixel art com os cinco agentes"></canvas>
     <div class="camada" id="placas"></div>
     <div class="camada" id="baloes"></div>
     <div class="faixa"><span class="luz" id="luzModo"></span><span id="textoModo">Carregando…</span></div>
@@ -189,18 +189,20 @@
   </div>
 </dialog>
 
-<script>
+<script type="module">
 // =============================================================
 // AGÊNCIA AGENTE-RH: o escritório dos agentes
 // -------------------------------------------------------------
-// Dados (tudo público, sem servidor):
+// A cena (desenho isométrico, móveis, busca de caminho) fica em
+// cena.js. Este script decide QUEM está ativo, a partir dos dados:
 //  - branch "painel-dados": diário da última execução e histórico,
 //    publicados pelo GitHub Actions no fim de cada execução
 //  - API do GitHub: se há uma execução rodando AGORA na nuvem
 //
-// Regra da cena: agente ATIVO fica no escritório fazendo a rotina
-// de trabalho dele; agente INATIVO vai para a sala de descanso.
+// Regra: agente ATIVO fica no escritório fazendo a rotina de trabalho;
+// agente INATIVO vai para a sala de descanso.
 // =============================================================
+import { W, H, usarContexto, desenharCena, desenharPessoa, centro, caminho, sala, MESAS, ESTACOES, DESCANSO, ligarTela, estado as estadoCena } from "./cena.js";
 
 const REPO = "Iuran-Freire/Agente-Rh";
 const URL_DADOS = `https://raw.githubusercontent.com/${REPO}/painel-dados/`;
@@ -209,17 +211,7 @@ document.getElementById("btnRodar").href = `https://github.com/${REPO}/actions/w
 document.getElementById("linkRepo").href = `https://github.com/${REPO}`;
 
 const tela = document.getElementById("tela");
-const ctx = tela.getContext("2d");
-const W = tela.width, H = tela.height;
-
-// ---------- Planta do lugar ----------
-const PAREDE = 46;       // altura da parede do fundo
-const DIVISA = 200;      // onde termina o escritório e começa a sala de descanso
-// "Corredores": linhas horizontais livres de móveis
-const L1 = 61, L2 = 93, L3 = 138;
-// Colunas livres para atravessar entre corredores, por sala
-const COLUNAS = { escritorio: [6, 96, 166], descanso: [222, 290] };
-const sala = x => (x < DIVISA ? "escritorio" : "descanso");
+usarContexto(tela.getContext("2d"));
 
 // ---------- A equipe ----------
 // O id é o mesmo que o agente usa no diário (src/painel.ts)
@@ -228,330 +220,112 @@ const EQUIPE = {
     nome: "Sr. Valdir", cargo: "Gerente", camisa: "#2f3b55", gravata: "#c0392b", cabelo: "#5a3a22", pele: "#f1c27d", calca: "#232a3b",
     personalidade: "Se acha o melhor chefe do mundo. Delega tudo, adora uma frase de efeito e nunca lê o perfil.md até o fim.",
     codigo: "o modelo (Claude). A cada passo do loop ele decide qual ferramenta usar e qual funcionário chamar.",
-    mesa: { x: 36, y: 104, w: 40, chefe: true },
   },
   analista: {
     nome: "Otávio", cargo: "Recrutador de RH", camisa: "#8a7a5a", cabelo: "#2a2a2a", pele: "#e8b48a", calca: "#3b3b46", acessorio: "oculos",
     personalidade: "Calmo, metódico, leva o seu perfil a sério. Sempre avisa quando a vaga pede inglês avançado. O gerente vive ignorando ele.",
     codigo: "ver_detalhes_vaga e registrar_avaliacao. Lê cada vaga e dá as notas por critério.",
-    mesa: { x: 104, y: 68, w: 30 },
   },
   buscador: {
-    nome: "Bia", cargo: "Estagiária de busca", camisa: "#4fb06d", cabelo: "#d0503a", pele: "#f5d0a9", calca: "#2b3245", acessorio: "lupa",
+    nome: "Bia", cargo: "Estagiária de busca", camisa: "#4fb06d", cabelo: "#d0503a", pele: "#f5d0a9", calca: "#2b3245", acessorio: "lupa", cabeloLongo: true,
     personalidade: "Animada demais. Abre 30 abas por minuto e comemora cada vaga encontrada, mesmo as de sênior.",
     codigo: "buscar_vagas_gupy e buscar_vagas_remotive. Procura vagas nas plataformas.",
-    mesa: { x: 12, y: 68, w: 30 },
   },
   linkedin: {
     nome: "Kléber", cargo: "Networker", camisa: "#4a8fe0", cabelo: "#111111", pele: "#c68642", calca: "#2b2b3a", acessorio: "bone",
     personalidade: "Vive no LinkedIn. Escreve 'gratidão' em tudo e chama os alertas de vaga de 'oportunidades incríveis'.",
     codigo: "ler_alertas_linkedin. Lê os alertas que o LinkedIn manda para o Gmail.",
-    mesa: { x: 58, y: 68, w: 30 },
   },
   carteiro: {
-    nome: "Sônia", cargo: "Recepcionista", camisa: "#c25b8a", cabelo: "#2a1a10", pele: "#8d5524", calca: "#2b2b3a", acessorio: "fone",
+    nome: "Sônia", cargo: "Recepcionista", camisa: "#c25b8a", cabelo: "#2a1a10", pele: "#8d5524", calca: "#2b2b3a", acessorio: "fone", coque: true,
     personalidade: "Sabe de tudo e lembra de todas as vagas que já foram enviadas. Nenhuma vaga repetida passa por ela.",
     codigo: "o envio do e-mail e a memória (vagas-vistas.json).",
-    mesa: { x: 118, y: 104, w: 36, balcao: true },
   },
 };
 const IDS = Object.keys(EQUIPE);
 
-// Estações de trabalho de cada um (além da própria mesa)
-const ESTACOES = {
-  coordenador: [{ x: 138, y: L1, dir: "cima", fala: "Quero esse quadro cheio de 10!" }, { x: 27, y: L1, dir: "baixo", fala: "Bia, mais vagas!" }, { x: 119, y: L1, dir: "baixo", fala: "Otávio, essa é nota 10, né?" }, { x: 132, y: L2, dir: "baixo", fala: "Sônia, manda tudo!" }],
-  analista:    [{ x: 138, y: L1, dir: "cima", fala: "Atualizando o quadro" }, { x: 183, y: L1, dir: "cima", fala: "Conferindo o arquivo" }],
-  buscador:    [{ x: 183, y: L1, dir: "cima", fala: "Arquivando vagas!" }, { x: 160, y: L2, dir: "cima", fala: "Os servidores estão quentes!" }],
-  linkedin:    [{ x: 26, y: L1, dir: "cima", fala: "Que oportunidade incrível 🙏", celular: true }, { x: 160, y: L2, dir: "cima", fala: "Gratidão, servidor" }],
-  carteiro:    [{ x: 146, y: L1, dir: "cima", fala: "Imprimindo o relatório" }, { x: 183, y: L3, dir: "cima", fala: "Separando os envelopes" }],
-};
-
-// Lugares da sala de descanso (cada um cabe uma pessoa)
-const DESCANSO = [
-  { x: 214, y: L1, dir: "cima", acao: "cafe", fala: "☕ Expresso duplo" },
-  { x: 232, y: L1, dir: "cima", acao: "cafe", fala: "Cadê o leite?" },
-  { x: 256, y: L1, dir: "cima", acao: "geladeira", fala: "Quem comeu minha pizza?" },
-  { x: 241, y: 120, faixa: L3, dir: "baixo", acao: "sofa", fala: "Esse episódio é bom!" },
-  { x: 255, y: 120, faixa: L3, dir: "baixo", acao: "sofa", fala: "Mais um e eu volto" },
-  { x: 269, y: 120, faixa: L3, dir: "baixo", acao: "sofa" },
-  { x: 307, y: 71, faixa: 71, dir: "cima", acao: "fliperama", fala: "Recorde!" },
-  { x: 308, y: 131, faixa: L3, dir: "baixo", acao: "dormir", fala: "zzz" },
-  { x: 282, y: L2, dir: "cima", acao: "tv", fala: "Esse anime é muito bom" },
-];
-const ocupado = new Map(); // lugar → id de quem está nele
-
-function assento(id) {
-  const m = EQUIPE[id].mesa;
-  return { x: m.x + Math.round(m.w / 2) - 4, y: m.y + 2, faixa: m.y < 90 ? L1 : L2, dir: "baixo", mesa: true };
-}
-
 // =============================================================
-// 1. DESENHO
+// 1. MOVIMENTO
 // =============================================================
-function px(x, y, w, h, cor) { ctx.fillStyle = cor; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-function horaManaus() { const a = new Date(); return { h: (a.getUTCHours() + 20) % 24, m: a.getUTCMinutes() }; }
+const VELOCIDADE = 2.4; // tiles por segundo
+const ocupado = new Map(); // lugar de descanso → id de quem está nele
 
-function desenharParedes(t) {
-  // Escritório: parede azul acinzentada, carpete
-  px(0, 0, DIVISA, PAREDE, "#3b4160");
-  px(0, PAREDE - 3, DIVISA, 3, "#2a2f48");
-  for (let y = PAREDE; y < H; y += 6) for (let x = 0; x < DIVISA; x += 6) px(x, y, 6, 6, ((x + y) / 6) % 2 ? "#4b5a6e" : "#52617a");
-  // Sala de descanso: parede quente, piso de madeira, tapete
-  px(DIVISA, 0, W - DIVISA, PAREDE, "#5a3f5e");
-  px(DIVISA, PAREDE - 3, W - DIVISA, 3, "#3f2b42");
-  for (let y = PAREDE; y < H; y += 5) { px(DIVISA, y, W - DIVISA, 5, (y / 5) % 2 ? "#8a5f3c" : "#956843"); px(DIVISA + ((y * 7) % 40), y, 1, 5, "#6e4a2e"); }
-  px(228, 100, 60, 34, "#2f6d74"); px(230, 102, 56, 30, "#3a8a90");
-  for (let x = 232; x < 286; x += 6) px(x, 116, 3, 2, "#e8d27a");
-  // Divisória com porta
-  px(DIVISA - 2, 0, 4, PAREDE + 2, "#22263a");
-  px(DIVISA - 2, PAREDE, 4, 22, "#22263a"); px(DIVISA - 1, PAREDE, 2, 22, "#8fb8d0"); // vidro
-  // Luzinhas na sala de descanso
-  for (let x = DIVISA + 6, i = 0; x < W - 2; x += 8, i++) {
-    px(x, 3 + (i % 2), 1, 1, "#222");
-    const cores = ["#ff6b6b", "#ffd93d", "#6bcB77", "#4d96ff"];
-    px(x, 4 + (i % 2), 2, 2, Math.floor(t / 500 + i) % 3 ? cores[i % 4] : "#555");
-  }
-}
-
-function desenharEscritorio(t, estado) {
-  const { h, m } = horaManaus();
-  const dia = h >= 6 && h < 18;
-  // Janela com a hora real de Manaus
-  px(6, 6, 38, 28, "#22263a"); px(8, 8, 34, 24, dia ? "#7cc4f0" : "#1d2450");
-  if (dia) px(32, 11, 5, 5, "#ffe27a"); else { px(32, 11, 4, 4, "#eee"); px(34, 11, 2, 2, "#1d2450"); px(14, 12, 1, 1, "#fff"); px(22, 15, 1, 1, "#fff"); }
-  px(10, 20, 6, 12, dia ? "#4e7aa8" : "#262c58"); px(18, 16, 5, 16, dia ? "#5a86b4" : "#2a3060"); px(28, 22, 7, 10, dia ? "#4e7aa8" : "#262c58");
-  if (!dia) for (const [a, b] of [[11, 23], [19, 19], [20, 25], [30, 25]]) px(a, b, 1, 1, "#ffd76a");
-  px(24, 8, 2, 24, "#22263a");
-
-  // Pôster de herói mascarado (original)
-  px(50, 6, 18, 26, "#1b1b2a"); px(51, 7, 16, 24, "#2c4a9a");
-  px(56, 10, 6, 5, "#f1c27d"); px(56, 11, 6, 2, "#c0392b"); px(57, 11, 1, 1, "#fff"); px(60, 11, 1, 1, "#fff");
-  px(55, 15, 8, 8, "#c0392b"); px(58, 17, 2, 2, "#ffd93d"); px(53, 15, 2, 12, "#ffd93d"); px(63, 15, 2, 12, "#ffd93d");
-  px(56, 23, 2, 6, "#1b2a6a"); px(60, 23, 2, 6, "#1b2a6a");
-
-  // Prateleira de colecionáveis
-  px(72, 26, 40, 2, "#6e4826");
-  // robô gigante
-  px(74, 15, 6, 4, "#e8e8f0"); px(75, 16, 1, 1, "#3aa3ff"); px(78, 16, 1, 1, "#3aa3ff"); px(73, 19, 8, 4, "#3a5fc0"); px(75, 23, 2, 3, "#e8e8f0"); px(78, 23, 2, 3, "#e8e8f0"); px(76, 14, 2, 1, "#ffd93d");
-  // garota mágica de anime (cabelo rosa com marias-chiquinhas)
-  px(85, 15, 5, 4, "#f5d0a9"); px(84, 13, 7, 3, "#ff8ac2"); px(82, 15, 2, 6, "#ff8ac2"); px(91, 15, 2, 6, "#ff8ac2"); px(86, 17, 1, 1, "#3a2a6a"); px(88, 17, 1, 1, "#3a2a6a");
-  px(84, 19, 7, 5, "#fff"); px(86, 20, 3, 1, "#ff4a8a"); px(86, 24, 1, 2, "#f5d0a9"); px(88, 24, 1, 2, "#f5d0a9");
-  // capacete espacial
-  px(96, 17, 8, 8, "#e8e8f0"); px(97, 19, 6, 4, "#2a2a4a"); px(98, 20, 2, 1, "#8ad8ff");
-  // dado de 20 lados e cubo mágico
-  px(106, 21, 4, 4, "#9b59b6"); px(107, 22, 2, 1, "#fff");
-  px(76, 30, 4, 4, "#e74c3c"); px(78, 30, 2, 2, "#f1c40f"); px(76, 32, 2, 2, "#2ecc71");
-
-  // Quadro branco: as barras são as notas reais da última execução
-  px(116, 6, 46, 28, "#22263a"); px(118, 8, 42, 24, "#f4f4ee");
-  const notas = (estado.status?.ranking ?? []).slice(0, 6).map(v => v.nota);
-  notas.forEach((n, i) => { const a = Math.max(1, Math.round(n * 2)); px(121 + i * 6, 30 - a, 4, a, n >= 8 ? "#3aa35a" : n >= 6.5 ? "#e0a43a" : "#d05050"); });
-  px(120, 30, 38, 1, "#999");
-
-  // Relógio com a hora real
-  const cx = 174, cy = 15;
-  px(cx - 6, cy - 6, 13, 13, "#22263a"); px(cx - 5, cy - 5, 11, 11, "#f3efe0");
-  const ponteiro = (ang, tam, cor) => { for (let i = 0; i <= tam; i++) px(cx + Math.round(Math.sin(ang) * i), cy - Math.round(Math.cos(ang) * i), 1, 1, cor); };
-  ponteiro(((h % 12) + m / 60) / 12 * Math.PI * 2, 3, "#22263a");
-  ponteiro(m / 60 * Math.PI * 2, 4, "#c0392b");
-
-  // Impressora (solta folha quando a Sônia imprime)
-  px(140, 46, 14, 10, "#6e4826"); px(141, 40, 12, 7, "#d8dde6"); px(142, 41, 10, 2, "#2a2a2a");
-  if (estado.imprimindo && Math.floor(t / 300) % 2) px(144, 37, 6, 4, "#fffdf3");
-  // Arquivo
-  px(176, 34, 14, 24, "#7a8494"); for (let y = 37; y < 56; y += 6) { px(177, y, 12, 5, "#8d97a8"); px(181, y + 2, 4, 1, "#3a3f4a"); }
-  // Rack de servidores com LEDs piscando
-  px(154, 64, 12, 26, "#1e2230"); for (let y = 66; y < 88; y += 4) { px(156, y, 8, 3, "#2c3244"); px(157, y + 1, 1, 1, (Math.floor(t / 200 + y) % 3) ? "#5ad17a" : "#1a5a2a"); px(159, y + 1, 1, 1, (Math.floor(t / 330 + y) % 4) ? "#f2b544" : "#5a4010"); }
-  // Planta e caixa de envelopes
-  px(186, 120, 8, 6, "#a0552d"); px(187, 113, 6, 7, "#3f8f4a"); px(185, 115, 3, 3, "#4fa85a"); px(192, 114, 3, 4, "#4fa85a");
-  px(176, 124, 12, 8, "#c0392b"); px(177, 125, 10, 2, "#e05a4a");
-  if (estado.correioCheio) { px(178, 121, 4, 3, "#fffdf3"); px(183, 120, 4, 4, "#fffdf3"); }
-}
-
-function desenharDescanso(t) {
-  // Máscaras na parede (originais)
-  px(206, 10, 12, 8, "#c0392b"); px(208, 12, 3, 2, "#fff"); px(213, 12, 3, 2, "#fff"); // máscara vermelha
-  px(222, 9, 10, 10, "#d4a017"); px(223, 12, 3, 2, "#2a2a2a"); px(228, 12, 3, 2, "#2a2a2a"); px(226, 15, 2, 3, "#b08010"); // máscara dourada
-  px(236, 8, 12, 12, "#2c3e50"); px(237, 9, 10, 6, "#8ad8ff"); px(236, 15, 12, 2, "#e8e8f0"); // capacete espacial
-  // TV passando um anime (original)
-  px(262, 8, 40, 26, "#111"); px(264, 10, 36, 20, "#3a6ad8");
-  const quadroTv = Math.floor(t / 700) % 3;
-  px(264, 24, 36, 6, "#2e8b57");
-  px(274, 14, 10, 9, "#f5d0a9"); px(272, 12, 14, 4, ["#ff8ac2", "#ffd93d", "#7a5cff"][quadroTv]); px(276, 17, 2, 3, "#2a2a6a"); px(281, 17, 2, 3, "#2a2a6a");
-  px(276, 17, 1, 1, "#fff"); px(281, 17, 1, 1, "#fff"); if (quadroTv === 1) px(278, 21, 3, 1, "#c0392b");
-  if (quadroTv === 2) { px(290, 12, 2, 2, "#fff"); px(268, 14, 1, 1, "#fff"); px(294, 20, 1, 1, "#fff"); }
-  px(280, 34, 4, 3, "#111");
-  // Balcão do café com a cafeteira expresso
-  px(204, 44, 40, 14, "#6e4826"); px(204, 42, 40, 3, "#a0703f");
-  px(208, 32, 12, 11, "#c8ccd6"); px(209, 34, 10, 3, "#2a2a2a"); px(213, 38, 2, 3, "#555"); px(216, 34, 1, 1, "#ff4a4a");
-  if (Math.floor(t / 450) % 2) px(213, 29, 1, 2, "#e0e0e0"); else px(214, 28, 1, 2, "#e0e0e0");
-  px(224, 38, 4, 4, "#fff"); px(229, 38, 4, 4, "#f2b544"); px(234, 38, 4, 4, "#5aa7ef"); // canecas
-  px(238, 36, 4, 6, "#8a5a3a"); // pote de grãos
-  // Geladeira com adesivos
-  px(248, 20, 16, 38, "#e8ecf2"); px(248, 36, 16, 1, "#b8bcc6"); px(262, 26, 1, 6, "#999"); px(262, 40, 1, 8, "#999");
-  px(251, 24, 3, 3, "#ff6b6b"); px(256, 28, 3, 3, "#4d96ff"); px(252, 42, 4, 3, "#ffd93d");
-  // Fliperama
-  px(300, 40, 16, 28, "#3a1a6a"); px(302, 44, 12, 10, "#111");
-  px(303, 45, 10, 8, Math.floor(t / 300) % 2 ? "#1a8a4a" : "#1a4a8a"); px(306 + (Math.floor(t / 250) % 4), 48, 2, 2, "#ffd93d");
-  px(302, 56, 12, 4, "#5a2a9a"); px(305, 57, 1, 2, "#ff4a4a"); px(309, 57, 2, 2, "#4dff8a");
-  // Sofá
-  px(232, 106, 50, 8, "#b0473a"); px(230, 110, 4, 14, "#8f3a2f"); px(280, 110, 4, 14, "#8f3a2f"); px(234, 114, 46, 8, "#c75a4a");
-  // Mesinha com pizza
-  px(206, 112, 14, 3, "#6e4826"); px(208, 115, 2, 8, "#6e4826"); px(216, 115, 2, 8, "#6e4826");
-  px(207, 108, 12, 4, "#d9b26a"); px(209, 109, 2, 1, "#c0392b"); px(214, 110, 2, 1, "#c0392b");
-  // Pufe
-  px(300, 126, 16, 10, "#4d96ff"); px(302, 124, 12, 4, "#6aa8ff");
-  // Planta
-  px(306, 92, 8, 6, "#a0552d"); px(307, 84, 6, 8, "#3f8f4a"); px(305, 86, 3, 4, "#4fa85a"); px(312, 85, 3, 4, "#4fa85a");
-}
-
-function desenharMesa(id, t, agentes) {
-  const d = EQUIPE[id], m = d.mesa, ag = agentes[id];
-  const ativo = ag.sentadoNaMesa && ag.ativo;
-  px(m.x, m.y, m.w, 3, m.balcao ? "#b07a9a" : "#c58b4f");
-  px(m.x, m.y + 3, m.w, 9, m.balcao ? "#8a5a7a" : "#9c6a3a");
-  px(m.x + 2, m.y + 5, 6, 2, d.camisa);
-  px(m.x + 1, m.y + 12, 2, 2, "#5a3a20"); px(m.x + m.w - 3, m.y + 12, 2, 2, "#5a3a20");
-  const mx = m.x + m.w - 13;
-  px(mx, m.y - 8, 11, 7, "#2b2d38"); px(mx + 4, m.y - 1, 3, 1, "#2b2d38");
-  px(mx + 9, m.y - 7, 1, 1, ativo ? (Math.floor(t / 250) % 2 ? "#5ad17a" : "#2f7a45") : "#555");
-  if (ativo) { ctx.globalAlpha = 0.16 + 0.08 * Math.sin(t / 170); px(mx - 3, m.y - 13, 17, 13, "#9fe8ff"); ctx.globalAlpha = 1; }
-  if (m.chefe) { // caneca "melhor chefe", plaquinha e plantinha
-    px(m.x + 3, m.y - 4, 4, 4, "#fff"); px(m.x + 4, m.y - 3, 2, 1, "#c0392b"); px(m.x + 7, m.y - 3, 1, 2, "#fff");
-    px(m.x + 10, m.y - 2, 8, 2, "#d4a017"); px(m.x + 22, m.y - 5, 4, 5, "#3f8f4a");
-  }
-  if (id === "analista" && ativo && Math.floor(t / 300) % 2) px(m.x + 4, m.y - 2, 4, 2, "#fffdf3");
-}
-
-// Personagem de 7x11 pixels; (x, y) = pés
-function desenharPessoa(c, ag, t, x = ag.x, y = ag.y, alvo = ctx) {
-  const P = (a, b, w, h, cor) => { alvo.fillStyle = cor; alvo.fillRect(Math.round(a), Math.round(b), w, h); };
-  const d = EQUIPE[ag.id];
-  const bx = Math.round(x) - 3, top = Math.round(y) - 11;
-  const anda = ag.andando ? Math.floor(t / 150) % 2 : 0;
-  const digita = ag.sentadoNaMesa && ag.ativo ? Math.floor(t / 140) % 2 : 0;
-  const costas = ag.direcao === "cima";
-  const sentado = ag.pose === "sofa" || ag.pose === "dormir";
-  const dormindo = ag.pose === "dormir";
-
-  P(bx + 1, Math.round(y), 5, 1, "rgba(0,0,0,.28)");
-  // pernas
-  if (sentado) { P(bx + 1, top + 9, 5, 1, d.calca); P(bx + 1, top + 10, 2, 1, "#1b1b1b"); P(bx + 4, top + 10, 2, 1, "#1b1b1b"); }
-  else {
-    P(bx + 1, top + 9, 2, anda ? 1 : 2, d.calca); P(bx + 4, top + 9, 2, anda ? 2 : 1, d.calca);
-    P(bx + 1, top + 10 - (anda ? 1 : 0), 2, 1, "#1b1b1b"); P(bx + 4, top + 10 - (anda ? 0 : 1), 2, 1, "#1b1b1b");
-  }
-  const sobe = sentado ? 1 : 0;
-  // corpo e braços
-  P(bx + 1, top + 5 + sobe, 5, 4 - sobe, d.camisa);
-  if (d.gravata && !costas) P(bx + 3, top + 5 + sobe, 1, 3, d.gravata);
-  P(bx, top + 5 + sobe + (digita ? 1 : 0), 1, 3, d.camisa); P(bx + 6, top + 5 + sobe + (digita ? 0 : 1), 1, 3, d.camisa);
-  P(bx, top + 8 + sobe + (digita ? 1 : 0), 1, 1, d.pele); P(bx + 6, top + 8 + sobe + (digita ? 0 : 1), 1, 1, d.pele);
-  // cabeça (cai para o lado quando dorme)
-  const hx = bx + (dormindo ? 1 : 0), ht = top + sobe;
-  P(hx + 1, ht + 1, 5, 4, d.pele); P(hx + 1, ht, 5, 2, d.cabelo);
-  if (ag.id === "buscador") { P(hx, ht + 1, 1, 4, d.cabelo); P(hx + 6, ht + 1, 1, 4, d.cabelo); } // cabelo comprido da Bia
-  if (ag.id === "carteiro") { P(hx, ht, 7, 2, d.cabelo); P(hx + 2, ht - 2, 3, 2, d.cabelo); }   // coque da Sônia
-  if (costas) P(hx + 1, ht + 1, 5, 3, d.cabelo);
-  else if (dormindo) { P(hx + 2, ht + 3, 1, 1, "#7a5a3a"); P(hx + 4, ht + 3, 1, 1, "#7a5a3a"); }
-  else {
-    const o = ag.direcao === "esquerda" ? -1 : ag.direcao === "direita" ? 1 : 0;
-    if ((t + ag.semente) % 3200 > 140) { P(hx + 2 + o, ht + 3, 1, 1, "#1b1b1b"); P(hx + 4 + o, ht + 3, 1, 1, "#1b1b1b"); }
-  }
-  // acessórios
-  if (d.acessorio === "oculos" && !costas && !dormindo) { P(hx + 1, ht + 3, 5, 1, "#1b1b1b"); P(hx + 2, ht + 3, 1, 1, "#9fd8ff"); P(hx + 4, ht + 3, 1, 1, "#9fd8ff"); }
-  if (d.acessorio === "bone") { P(hx + 1, ht - 1, 5, 2, "#0a66c2"); if (!costas) P(hx + (ag.direcao === "esquerda" ? -1 : 4), ht + 1, 3, 1, "#0a66c2"); }
-  if (d.acessorio === "fone") { P(hx, ht + 1, 1, 3, "#dcdcdc"); P(hx + 6, ht + 1, 1, 3, "#dcdcdc"); if (!costas) P(hx + 5, ht + 4, 2, 1, "#dcdcdc"); }
-  if (d.acessorio === "lupa" && ag.ativo && !ag.sentadoNaMesa && !costas) { P(bx + 7, top + 4, 3, 3, "#cfcfcf"); P(bx + 8, top + 5, 1, 1, "#bfe8ff"); P(bx + 7, top + 7, 1, 2, "#7a5230"); }
-  if (ag.pose === "cafe" || ag.segurandoCafe) { P(bx + 6, top + 6, 3, 3, "#fff"); P(bx + 7, top + 6, 1, 1, "#6e4826"); }
-  if (ag.celular) P(bx + 6, top + 5, 2, 3, "#222");
-  if (ag.carregando) { P(bx + 5, top + 6, 4, 3, "#fffdf3"); P(bx + 6, top + 7, 2, 1, "#c25b8a"); }
-}
-
-// =============================================================
-// 2. MOVIMENTO
-// -------------------------------------------------------------
-// Rota: sobe/desce até o corredor → anda até uma coluna livre →
-// troca de corredor (passando pelo corredor do meio se mudar de sala)
-// → anda até o destino. Assim ninguém atravessa as mesas.
-// =============================================================
 const agentes = Object.fromEntries(IDS.map((id, i) => {
-  const s = DESCANSO[i];
-  ocupado.set(s, id);
-  return [id, { id, x: s.x, y: s.y, faixa: s.faixa ?? s.y, caminho: [], andando: false, direcao: s.dir, pose: s.acao, lugar: s,
-    ativo: false, sentadoNaMesa: false, espera: 800 + i * 700, balao: "", balaoAte: 0, semente: i * 911 }];
+  const lugar = DESCANSO[i];
+  ocupado.set(lugar, id);
+  return [id, { id, gx: lugar.gx, gy: lugar.gy, dir: lugar.dir, pose: lugar.acao, lugar, rota: [], andando: false,
+    ativo: false, sentado: false, digitando: false, espera: 800 + i * 700, balao: "", balaoAte: 0, semente: i * 911 }];
 }));
 
-function colunaMaisPerto(lista, x1, x2) { return lista.reduce((a, c) => (Math.abs(x1 - c) + Math.abs(x2 - c) < Math.abs(x1 - a) + Math.abs(x2 - a) ? c : a)); }
+function cadeira(id) { const [gx, gy] = MESAS[id].cadeira; return { gx, gy, dir: "ny", mesa: true }; }
 
 function irPara(ag, destino) {
-  const faixaDest = destino.faixa ?? destino.y;
-  const salaA = sala(ag.x), salaB = sala(destino.x);
-  const c1 = colunaMaisPerto(COLUNAS[salaA], ag.x, salaA === salaB ? destino.x : DIVISA);
-  const c2 = salaA === salaB ? c1 : colunaMaisPerto(COLUNAS[salaB], DIVISA, destino.x);
-  const p = [{ x: ag.x, y: ag.faixa }, { x: c1, y: ag.faixa }];
-  if (salaA !== salaB) p.push({ x: c1, y: L2 }, { x: c2, y: L2 });
-  p.push({ x: c2, y: faixaDest }, { x: destino.x, y: faixaDest }, { x: destino.x, y: destino.y });
-  ag.caminho = p.filter((q, i) => i === 0 || q.x !== p[i - 1].x || q.y !== p[i - 1].y);
-  ag.faixa = faixaDest;
-  ag.pose = null; ag.sentadoNaMesa = false; ag.celular = false;
+  const de = { gx: Math.round(ag.gx), gy: Math.round(ag.gy) };
+  ag.rota = caminho(de, destino);
+  ag.destino = destino;
+  ag.pose = null; ag.sentado = false; ag.digitando = false; ag.celular = false;
   if (ag.lugar) ocupado.delete(ag.lugar);
   ag.lugar = destino.acao ? destino : null;
   if (ag.lugar) ocupado.set(ag.lugar, ag.id);
-  ag.chegada = destino;
+  if (!ag.rota.length) chegar(ag);
 }
 
-function mover(ag, dt, agora) {
-  if (!ag.caminho.length) { ag.andando = false; return; }
-  const alvo = ag.caminho[0], dx = alvo.x - ag.x, dy = alvo.y - ag.y, dist = Math.hypot(dx, dy), passo = 36 * dt;
-  ag.andando = true;
-  if (Math.abs(dx) > Math.abs(dy)) ag.direcao = dx > 0 ? "direita" : "esquerda"; else if (dist > 0.1) ag.direcao = dy > 0 ? "baixo" : "cima";
-  if (dist > passo) { ag.x += dx / dist * passo; ag.y += dy / dist * passo; return; }
-  ag.x = alvo.x; ag.y = alvo.y; ag.caminho.shift();
-  if (ag.caminho.length) return;
-  // chegou
-  const c = ag.chegada; ag.andando = false; ag.direcao = c.dir ?? "baixo";
-  if (c.mesa) ag.sentadoNaMesa = true;
+function chegar(ag) {
+  const c = ag.destino; ag.andando = false;
+  if (!c) return;
+  ag.dir = c.dir ?? "py";
+  if (c.mesa) ag.sentado = true;
   if (c.acao) ag.pose = c.acao;
   if (c.celular) ag.celular = true;
-  if (c.fala && Math.random() < (ag.ativo ? 0.5 : 0.45)) falar(ag, c.fala, 2400, agora);
   if (c.acao === "cafe") ag.segurandoCafe = true;
+  if (c.fala && Math.random() < 0.5) falar(ag, c.fala, 2400);
+}
+
+function mover(ag, dt) {
+  if (!ag.rota.length) return;
+  const alvo = ag.rota[0], dx = alvo.gx - ag.gx, dy = alvo.gy - ag.gy, dist = Math.hypot(dx, dy), passo = VELOCIDADE * dt;
+  ag.andando = true;
+  ag.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "px" : "nx") : (dy > 0 ? "py" : "ny");
+  if (dist > passo) { ag.gx += dx / dist * passo; ag.gy += dy / dist * passo; return; }
+  ag.gx = alvo.gx; ag.gy = alvo.gy; ag.rota.shift();
+  if (!ag.rota.length) chegar(ag);
 }
 
 function falar(ag, texto, ms, agora = performance.now()) { ag.balao = texto; ag.balaoAte = agora + ms; }
 
-// Rotina de quem está ATIVO: mesa → uma estação → mesa → ...
-function rotinaTrabalho(ag, agora, dt) {
-  if (ag.caminho.length) return;
+// Rotina de quem está ATIVO: mesa → uma estação de trabalho → mesa → ...
+function rotinaTrabalho(ag, dt) {
+  if (ag.rota.length) return;
   ag.espera -= dt * 1000;
   if (ag.espera > 0) return;
-  if (sala(ag.x) === "descanso" || !ag.sentadoNaMesa) {
-    irPara(ag, assento(ag.id)); ag.segurandoCafe = false;
+  if (!ag.sentado) {
+    ag.segurandoCafe = false;
+    irPara(ag, cadeira(ag.id));
     ag.espera = 4000 + Math.random() * 3000;
   } else {
     const opcoes = ESTACOES[ag.id];
     irPara(ag, opcoes[Math.floor(Math.random() * opcoes.length)]);
     ag.espera = 1800 + Math.random() * 1500;
-    if (ag.id === "carteiro") { estado.imprimindo = true; setTimeout(() => (estado.imprimindo = false), 4000); }
+    if (ag.id === "carteiro") { estadoCena.imprimindo = true; setTimeout(() => (estadoCena.imprimindo = false), 4000); }
   }
 }
 
 // Rotina de quem está INATIVO: escolhe um lugar livre na sala de descanso
-function rotinaDescanso(ag, agora, dt) {
-  if (ag.caminho.length) return;
+function rotinaDescanso(ag, dt) {
+  if (ag.rota.length) return;
   ag.espera -= dt * 1000;
-  if (ag.espera > 0 && sala(ag.x) === "descanso") return;
+  if (ag.espera > 0 && sala(ag.gx) === "descanso") return;
   const livres = DESCANSO.filter(l => !ocupado.has(l) || ocupado.get(l) === ag.id);
   const lugar = livres[Math.floor(Math.random() * livres.length)];
-  if (lugar !== ag.lugar) irPara(ag, lugar);
+  if (lugar !== ag.lugar || sala(ag.gx) !== "descanso") irPara(ag, lugar);
   ag.espera = 6000 + Math.random() * 9000;
 }
 
 // =============================================================
-// 3. MODOS (quem está ativo)
+// 2. MODOS (quem está ativo)
 // =============================================================
 let modo = "ocioso";
-const estado = { status: null, historico: [], runs: [], correioCheio: false, imprimindo: false };
+const estado = { status: null, historico: [], runs: [] };
 let reproducao = null;
 
 function definirModo(novo, texto) {
@@ -585,20 +359,20 @@ function reproduzir() {
   const fimReal = Math.max(...s.eventos.map(e => e.inicio_ms + e.duracao_ms));
   const k = Math.min(1, 45000 / fimReal); // execuções longas cabem em ~45 s
   reproducao = { t0: performance.now() + 1500, eventos: s.eventos.map(e => ({ ...e, s: e.inicio_ms * k, d: Math.max(1200, e.duracao_ms * k) })), fim: fimReal * k + 1200, terminou: false };
-  estado.correioCheio = false;
+  estadoCena.correioCheio = false;
   definirModo("reproducao", `Reprisando a execução de ${formatarData(s.inicio)}${s.exemplo ? " (exemplo)" : ""}`);
   desenharDiario();
 }
 
 function atualizarReproducao(agora) {
   const r = reproducao, tRel = agora - r.t0;
-  // Ativo = tem tarefa agora ou terá em breve. A folga de alguns segundos evita
-  // que o personagem fique indo e voltando da sala de descanso.
+  // Ativo = tem tarefa agora ou terá em breve. A folga evita que o
+  // personagem fique indo e voltando da sala de descanso.
   for (const ag of Object.values(agentes)) {
     const dele = r.eventos.filter(e => e.agente === ag.id);
     const agoraMesmo = dele.find(e => tRel >= e.s && tRel < e.s + e.d);
-    const perto = dele.some(e => tRel >= e.s - 2500 && tRel < e.s + e.d + 7000);
-    ativar(ag, perto);
+    ativar(ag, dele.some(e => tRel >= e.s - 2500 && tRel < e.s + e.d + 7000));
+    ag.tarefaAgora = !!agoraMesmo;
     if (agoraMesmo) { ag.balao = agoraMesmo.acao; ag.balaoAte = agora + 250; }
   }
   marcarDiario(tRel);
@@ -607,16 +381,16 @@ function atualizarReproducao(agora) {
     const s = estado.status, sonia = agentes.carteiro;
     if (s.email_enviado) {
       ativar(sonia, true); sonia.carregando = true;
-      irPara(sonia, { x: 183, y: L3, dir: "cima", fala: "" }); sonia.espera = 4000;
-      falar(sonia, `📬 ${s.novas_enviadas} vaga(s) enviada(s)!`, 4500);
-      setTimeout(() => { sonia.carregando = false; estado.correioCheio = true; }, 3800);
+      irPara(sonia, { gx: 9, gy: 10, dir: "px" }); sonia.espera = 5000;
+      falar(sonia, `📬 ${s.novas_enviadas} vaga(s) enviada(s)!`, 5000);
+      setTimeout(() => { sonia.carregando = false; estadoCena.correioCheio = true; }, 4500);
     } else falar(agentes.coordenador, "Nada novo hoje. Amanhã tem mais!", 4000);
-    setTimeout(() => { if (modo === "reproducao") entrarOcioso(); }, 7000);
+    setTimeout(() => { if (modo === "reproducao") entrarOcioso(); }, 8000);
   }
 }
 
 // =============================================================
-// 4. LAÇO DE ANIMAÇÃO
+// 3. LAÇO DE ANIMAÇÃO
 // =============================================================
 const elBalao = {}, elPlaca = {};
 for (const id of IDS) {
@@ -627,40 +401,36 @@ for (const id of IDS) {
 let antes = performance.now(), ultimaEquipe = 0;
 function quadro(agora) {
   // Se o navegador desacelerar a animação (aba em segundo plano), o tempo
-  // que passou é dividido em passinhos de 50 ms, para ninguém ficar em
-  // câmera lenta nem atravessar paredes
+  // que passou é dividido em passinhos de 50 ms, para ninguém ficar em câmera lenta
   let falta = Math.min(2, (agora - antes) / 1000); antes = agora;
   if (modo === "reproducao" && reproducao) atualizarReproducao(agora);
   while (falta > 0) {
     const dt = Math.min(0.05, falta); falta -= dt;
-    for (const ag of Object.values(agentes)) {
-      if (ag.ativo) rotinaTrabalho(ag, agora, dt); else rotinaDescanso(ag, agora, dt);
-      mover(ag, dt, agora);
-    }
+    for (const ag of Object.values(agentes)) { if (ag.ativo) rotinaTrabalho(ag, dt); else rotinaDescanso(ag, dt); mover(ag, dt); }
+  }
+  for (const ag of Object.values(agentes)) {
+    // Digita (e a tela liga) quem está sentado na própria mesa e trabalhando
+    ag.digitando = ag.sentado && ag.ativo && (modo !== "reproducao" || ag.tarefaAgora);
+    ligarTela(ag.id, ag.sentado && ag.ativo);
   }
 
-  ctx.imageSmoothingEnabled = false;
-  desenharParedes(agora); desenharEscritorio(agora, estado); desenharDescanso(agora);
-  // Ordena mesas e pessoas por y: quem está mais embaixo é desenhado por cima
-  [
-    ...IDS.map(id => ({ y: EQUIPE[id].mesa.y + 2.5, f: () => desenharMesa(id, agora, agentes) })),
-    ...Object.values(agentes).map(ag => ({ y: ag.y, f: () => desenharPessoa(ctx, ag, agora) })),
-  ].sort((a, b) => a.y - b.y).forEach(c => c.f());
+  desenharCena(agora, Object.values(agentes), EQUIPE, (estado.status?.ranking ?? []).map(v => v.nota));
 
   for (const ag of Object.values(agentes)) {
+    const c = centro(ag.gx, ag.gy);
     const b = elBalao[ag.id], visivel = ag.balao && agora < ag.balaoAte;
     b.style.opacity = visivel ? 1 : 0;
-    if (visivel) { if (b.textContent !== ag.balao) b.textContent = ag.balao; b.style.left = (ag.x / W * 100) + "%"; b.style.top = ((ag.y - 14) / H * 100) + "%"; }
+    if (visivel) { if (b.textContent !== ag.balao) b.textContent = ag.balao; b.style.left = (c.x / W * 100) + "%"; b.style.top = ((c.y - 17) / H * 100) + "%"; }
     // A plaquinha com o nome só aparece para quem está sob o mouse
     const p = elPlaca[ag.id]; p.style.display = ag.id === sobMouse ? "block" : "none";
-    p.style.left = (ag.x / W * 100) + "%"; p.style.top = ((ag.y + 1.5) / H * 100) + "%";
+    p.style.left = (c.x / W * 100) + "%"; p.style.top = ((c.y + 1) / H * 100) + "%";
   }
   if (agora - ultimaEquipe > 500) { atualizarEquipe(); ultimaEquipe = agora; }
   requestAnimationFrame(quadro);
 }
 
 // =============================================================
-// 5. FICHA DO PERSONAGEM
+// 4. FICHA DO PERSONAGEM
 // =============================================================
 const dialogo = document.getElementById("ficha");
 document.getElementById("fecharFicha").onclick = () => dialogo.close();
@@ -679,7 +449,7 @@ function abrirFicha(id) {
   if (tarefas.length > 8) lista.append(el("li", { className: "fraco", textContent: `… e mais ${tarefas.length - 8}` }));
   const r = document.getElementById("retrato").getContext("2d");
   r.clearRect(0, 0, 14, 18);
-  desenharPessoa(r, { ...ag, andando: false, pose: null, sentadoNaMesa: false, direcao: "baixo", carregando: false, celular: false, segurandoCafe: false }, 0, 7, 15, r);
+  desenharPessoa(r, d, { id, dir: "px", semente: 1, ativo: false }, 0, 7, 17);
   dialogo.showModal();
 }
 
@@ -687,17 +457,17 @@ function abrirFicha(id) {
 function quemEstaEm(e) {
   const caixa = tela.getBoundingClientRect();
   const x = (e.clientX - caixa.left) / caixa.width * W, y = (e.clientY - caixa.top) / caixa.height * H;
-  let melhor = null, menor = 12;
-  for (const ag of Object.values(agentes)) { const dist = Math.hypot(ag.x - x, ag.y - 5 - y); if (dist < menor) { menor = dist; melhor = ag.id; } }
+  let melhor = null, menor = 9;
+  for (const ag of Object.values(agentes)) { const c = centro(ag.gx, ag.gy), dist = Math.hypot(c.x - x, c.y - 7 - y); if (dist < menor) { menor = dist; melhor = ag.id; } }
   return melhor;
 }
 let sobMouse = null;
-tela.addEventListener("mousemove", e => { sobMouse = quemEstaEm(e); });
+tela.addEventListener("mousemove", e => { sobMouse = quemEstaEm(e); tela.style.cursor = sobMouse ? "pointer" : "default"; });
 tela.addEventListener("mouseleave", () => { sobMouse = null; });
 tela.addEventListener("click", e => { const id = quemEstaEm(e); if (id) abrirFicha(id); });
 
 // =============================================================
-// 6. PAINÉIS
+// 5. PAINÉIS
 // =============================================================
 const fmtData = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Manaus", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 function formatarData(iso) { return fmtData.format(new Date(iso)); }
@@ -770,7 +540,7 @@ function desenharProxima() {
 }
 
 // =============================================================
-// 7. DADOS
+// 6. DADOS
 // =============================================================
 const EXEMPLO = {
   exemplo: true, inicio: new Date(Date.now() - 3 * 3600e3).toISOString(), duracao_s: 48, passos: 6, origem: "nuvem", novas_enviadas: 2, email_enviado: true,

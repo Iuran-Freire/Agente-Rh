@@ -19,12 +19,16 @@ Os personagens são **originais**: arquétipos de escritório, não personagens 
 
 ## Telas e interações
 
-1. **A cena (2D, pixel art), com duas salas**
-   - **Escritório (esquerda):** mesas com computadores, rack de servidores, impressora, arquivo,
+1. **A cena (pixel art isométrico, estilo jogo de sala), com duas salas**
+   - Vista na diagonal, como em jogos de sala. O chão é uma grade de tiles, os móveis são blocos
+     3D e os personagens andam de tile em tile desviando dos móveis (busca em largura na grade).
+     O motor fica em `docs/cena.js`.
+   - Escritório e sala de descanso separados por uma meia-parede de vidro com porta.
+   - **Escritório (fundo):** mesas com computadores, rack de servidores, impressora, arquivo,
      quadro com as notas reais da última execução, janela e relógio com a hora real de Manaus, e
      uma prateleira de colecionáveis geek (herói mascarado, robô gigante, garota mágica de anime,
      capacete espacial, dado de 20 lados).
-   - **Sala de descanso (direita):** cafeteira expresso, geladeira, sofá, TV passando anime,
+   - **Sala de descanso (frente, à direita):** cafeteira expresso, geladeira, sofá, TV passando anime,
      fliperama, pufe para cochilar, pizza, máscaras na parede e luzinhas piscando.
    - **Regra:** agente **ativo** fica no escritório fazendo a rotina dele (mesa → estação de
      trabalho → mesa); agente **inativo** vai para a sala de descanso.
@@ -58,7 +62,7 @@ Os personagens são **originais**: arquétipos de escritório, não personagens 
 
 ## Status
 
-- ✅ Cena com escritório e sala de descanso, rotinas de trabalho e de descanso
+- ✅ Cena isométrica com escritório e sala de descanso, rotinas de trabalho e de descanso
 - ✅ Reprodução da última execução, modo ao vivo, painéis e histórico
 - ✅ Ficha do personagem (clicando na cena ou na lista da equipe)
 - ⬜ Depoimentos para a câmera
