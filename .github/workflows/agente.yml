@@ -31,6 +31,11 @@ concurrency:
   group: agente-vagas
   cancel-in-progress: false
 
+# O workflow precisa de permissão de escrita para publicar os dados
+# do painel na branch "painel-dados"
+permissions:
+  contents: write
+
 jobs:
   buscar-vagas:
     runs-on: ubuntu-latest
@@ -80,3 +85,28 @@ jobs:
         with:
           path: vagas-vistas.json
           key: memoria-${{ github.run_id }}
+
+      # ---------- Dados do painel (docs/index.html) ----------
+      # O diário da execução vai para uma branch separada, "painel-dados",
+      # para não encher o histórico do main com um commit por dia.
+      # A página lê os arquivos de lá.
+      - name: Publicar o diário da execução para o painel
+        if: always() && hashFiles('status/ultima-execucao.json') != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Abre a branch painel-dados numa pasta à parte (worktree).
+          # Na primeira vez ela ainda não existe, então é criada vazia (orphan).
+          if git fetch origin painel-dados; then
+            git worktree add /tmp/painel FETCH_HEAD
+            git -C /tmp/painel checkout -B painel-dados
+          else
+            git worktree add --orphan -b painel-dados /tmp/painel
+          fi
+
+          node scripts/atualizar-painel.mjs status/ultima-execucao.json /tmp/painel
+
+          git -C /tmp/painel add -A
+          git -C /tmp/painel commit -m "Painel: execução ${{ github.run_id }}"
+          git -C /tmp/painel push origin painel-dados

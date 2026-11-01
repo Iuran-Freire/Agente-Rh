@@ -10,6 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ferramentas, executarFerramenta, avaliacoes } from "./ferramentas.js";
 import { carregarMemoria, jaVista, registrarEnvio } from "./memoria.js";
 import { enviarEmail } from "./email.js";
+import { medir, agenteDaFerramenta, descreverFerramenta, anotarResultado, salvarStatus } from "./painel.js";
 
 // ETAPA 5: só vão para o e-mail as vagas com pelo menos esta nota.
 // Abaixo disso, nem vale a pena te incomodar.
@@ -94,7 +95,7 @@ function mostrarRanking() {
 
 // ETAPA 5: o que acontece depois que o agente termina.
 // Tudo aqui é código comum, sem modelo: filtrar, enviar, lembrar.
-async function finalizar(resumo: string) {
+async function finalizar(resumo: string, passos: number) {
   mostrarRanking();
 
   const memoria = carregarMemoria();
@@ -105,20 +106,31 @@ async function finalizar(resumo: string) {
     .filter((v) => v.nota >= NOTA_MINIMA)
     .sort((a, b) => b.nota - a.nota);
 
+  let enviado = false;
   if (novas.length === 0) {
     console.log(`\n📪 Nenhuma vaga nova com nota ≥ ${NOTA_MINIMA}. Nada para enviar hoje.`);
-    return;
+  } else {
+    enviado = await medir("carteiro", `Enviando ${novas.length} vaga(s) por e-mail`, () =>
+      enviarEmail(novas, resumo),
+    );
+
+    // Só grava na memória o que foi enviado DE VERDADE. Se o envio
+    // falhar (ou for só a prévia), as vagas continuam "novas" e vão
+    // no próximo e-mail.
+    if (enviado) {
+      registrarEnvio(memoria, novas);
+      console.log(`🧠 ${novas.length} vaga(s) gravada(s) na memória (vagas-vistas.json)`);
+    }
   }
 
-  const enviado = await enviarEmail(novas, resumo);
-
-  // Só grava na memória o que foi enviado DE VERDADE. Se o envio
-  // falhar (ou for só a prévia), as vagas continuam "novas" e vão
-  // no próximo e-mail.
-  if (enviado) {
-    registrarEnvio(memoria, novas);
-    console.log(`🧠 ${novas.length} vaga(s) gravada(s) na memória (vagas-vistas.json)`);
-  }
+  // ETAPA 9: grava o diário da execução para o painel
+  salvarStatus({
+    passos,
+    resumo,
+    avaliacoes,
+    novasEnviadas: enviado ? novas.length : 0,
+    emailEnviado: enviado,
+  });
 }
 
 async function rodarAgente(pedido: string) {
@@ -133,13 +145,16 @@ async function rodarAgente(pedido: string) {
     console.log(`\n── Passo ${passo}: perguntando ao modelo...`);
 
     // 1) PENSAR: o modelo recebe o histórico + as ferramentas disponíveis
-    const resposta = await cliente.messages.create({
-      model: MODELO,
-      max_tokens: 4096,
-      system: SYSTEM,
-      tools: ferramentas,
-      messages: mensagens,
-    });
+    // (medir só anota no diário quanto tempo o modelo levou pensando)
+    const resposta = await medir("coordenador", `Pensando no passo ${passo}`, () =>
+      cliente.messages.create({
+        model: MODELO,
+        max_tokens: 4096,
+        system: SYSTEM,
+        tools: ferramentas,
+        messages: mensagens,
+      }),
+    );
 
     // A resposta do modelo entra no histórico (inclusive os pedidos de ferramenta)
     mensagens.push({ role: "assistant", content: resposta.content });
@@ -159,7 +174,7 @@ async function rodarAgente(pedido: string) {
     if (resposta.stop_reason !== "tool_use") {
       console.log(`\n✅ Fim (stop_reason: ${resposta.stop_reason}, ${passo} passo(s))`);
       // O texto final do modelo vira o resumo no topo do e-mail
-      await finalizar(textoDoPasso);
+      await finalizar(textoDoPasso, passo);
       return;
     }
 
@@ -170,7 +185,12 @@ async function rodarAgente(pedido: string) {
       if (bloco.type !== "tool_use") continue;
 
       console.log(`🔧 Ferramenta: ${bloco.name}(${JSON.stringify(bloco.input)})`);
-      const { conteudo, erro } = await executarFerramenta(bloco.name, bloco.input);
+      const { conteudo, erro } = await medir(
+        agenteDaFerramenta(bloco.name),
+        descreverFerramenta(bloco.name, bloco.input as Record<string, unknown>),
+        () => executarFerramenta(bloco.name, bloco.input),
+      );
+      anotarResultado(conteudo, erro);
       console.log(erro ? `   ⚠️ ${conteudo}` : `   ↳ ${conteudo.length} caracteres de resultado`);
 
       resultados.push({
@@ -189,7 +209,7 @@ async function rodarAgente(pedido: string) {
 
   console.log(`\n⛔ Parei após ${MAX_PASSOS} passos sem resposta final.`);
   // Mesmo parando no meio, as avaliações já registradas não se perdem
-  await finalizar("O agente atingiu o limite de passos antes de terminar o resumo.");
+  await finalizar("O agente atingiu o limite de passos antes de terminar o resumo.", MAX_PASSOS);
 }
 
 const pedido =

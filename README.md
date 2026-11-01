@@ -45,6 +45,8 @@ Exemplo de saída no terminal:
 | `src/linkedin.ts` | Lê os alertas de vaga do LinkedIn na caixa do Gmail (IMAP). |
 | `src/memoria.ts` | A memória de longo prazo: o `vagas-vistas.json`, que lembra o que já foi enviado. |
 | `src/email.ts` | Monta o e-mail em HTML e envia pelo Gmail. |
+| `src/painel.ts` | O diário de eventos: quem fez o quê e quando, para o painel em pixel art. |
+| `docs/` | O painel (GitHub Pages) e o modelo da plataforma. |
 | `scripts/` | Agendamento diário no Windows (`agendar.ps1`, `desagendar.ps1`) e o script que roda o agente gravando log (`rodar-agente.ps1`). |
 | `perfil.md` | Quem eu sou e o que procuro. O agente lê este arquivo a cada execução. |
 
@@ -96,6 +98,17 @@ npm run agente -- "vagas de estágio em desenvolvimento react"
 
 Sem o Gmail configurado, o agente não envia nada. Ele salva uma prévia em
 `relatorios/previa-email.html`.
+
+## Painel: Agência Agente-RH
+
+`docs/index.html` é um painel em pixel art publicado no GitHub Pages. Cada parte do agente é um
+funcionário de uma agência de recrutamento fictícia: quem está trabalhando fica no escritório,
+quem está livre vai para a sala de descanso. A página reencena a última execução real, evento por
+evento, e mostra ao vivo quando o agente está rodando na nuvem. O modelo completo está em
+[`docs/MODELO.md`](docs/MODELO.md).
+
+Os dados vêm do diário que o agente grava (`src/painel.ts`), que o workflow publica na branch
+`painel-dados`.
 
 ## Rodar na nuvem com GitHub Actions (recomendado)
 
@@ -149,6 +162,7 @@ npm run desagendar
 6. Alertas do LinkedIn lidos do Gmail
 7. Execução diária automática pelo Agendador de Tarefas do Windows, com log
 8. Execução na nuvem com GitHub Actions (agendada ou pelo celular), com a memória no cache
+9. Diário de eventos + painel em pixel art no GitHub Pages
 
 ---
 
