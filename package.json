@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "agente": "tsx src/agente.ts",
+    "agendar": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/agendar.ps1",
+    "desagendar": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/desagendar.ps1",
     "checar": "tsc"
   },
   "dependencies": {

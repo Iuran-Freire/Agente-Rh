@@ -4,3 +4,4 @@ node_modules/
 # Dados pessoais gerados pelo agente
 vagas-vistas.json
 relatorios/
+logs/

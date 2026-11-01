@@ -45,6 +45,7 @@ Exemplo de saída no terminal:
 | `src/linkedin.ts` | Lê os alertas de vaga do LinkedIn na caixa do Gmail (IMAP). |
 | `src/memoria.ts` | A memória de longo prazo: o `vagas-vistas.json`, que lembra o que já foi enviado. |
 | `src/email.ts` | Monta o e-mail em HTML e envia pelo Gmail. |
+| `scripts/` | Agendamento diário no Windows (`agendar.ps1`, `desagendar.ps1`) e o script que roda o agente gravando log (`rodar-agente.ps1`). |
 | `perfil.md` | Quem eu sou e o que procuro. O agente lê este arquivo a cada execução. |
 
 ### Decisões de design
@@ -96,6 +97,23 @@ npm run agente -- "vagas de estágio em desenvolvimento react"
 Sem o Gmail configurado, o agente não envia nada. Ele salva uma prévia em
 `relatorios/previa-email.html`.
 
+## Rodar sozinho todo dia (Windows)
+
+```bash
+npm run agendar
+```
+
+Isso cria a tarefa **"Agente de Vagas"** no Agendador de Tarefas do Windows, para rodar todo dia
+às 08:00. Para outro horário, use `npm run agendar -- -Hora 07:30`. Se o PC estiver desligado no
+horário, a tarefa roda assim que ele ligar. A saída de cada execução vai para
+`logs/agente-AAAA-MM-DD.log`.
+
+Para parar de rodar sozinho:
+
+```bash
+npm run desagendar
+```
+
 ## Ajustes rápidos
 
 - **Pesos da nota final:** `PESOS` em `src/ferramentas.ts`
@@ -110,8 +128,7 @@ Sem o Gmail configurado, o agente não envia nada. Ele salva uma prévia em
 4. Nota de compatibilidade estruturada (`strict: true`)
 5. Memória entre execuções + envio de e-mail
 6. Alertas do LinkedIn lidos do Gmail
-
-**Próximo passo:** agendar para rodar sozinho todo dia.
+7. Execução diária automática pelo Agendador de Tarefas do Windows, com log
 
 ---
 
