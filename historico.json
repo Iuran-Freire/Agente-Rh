@@ -1,5 +1,16 @@
 [
   {
+    "inicio": "2026-11-01T22:55:43.853Z",
+    "duracao_s": 38,
+    "passos": 7,
+    "vagas_avaliadas": 2,
+    "novas_enviadas": 1,
+    "melhor": {
+      "titulo": "Pessoa Engenheira de Dados Júnior",
+      "nota": 6.3
+    }
+  },
+  {
     "inicio": "2026-11-01T22:54:58.055Z",
     "duracao_s": 29,
     "passos": 6,
