@@ -95,16 +95,16 @@ for (let gy = 0; gy < LINHAS; gy++) {
   });
 }
 
-// ---------- Mesas (cada personagem tem a sua) ----------
+// ---------- Mesas (uma por função do agente, mais a do chefe) ----------
 // cadeira = tile onde o personagem senta, virado para a mesa
 export const MESAS = {
-  buscador:    { gx: 1, gy: 2, w: 2, cadeira: [1, 3] },
-  linkedin:    { gx: 4, gy: 2, w: 2, cadeira: [4, 3] },
-  analista:    { gx: 7, gy: 2, w: 2, cadeira: [7, 3] },
-  coordenador: { gx: 2, gy: 6, w: 3, cadeira: [3, 7], chefe: true },
-  carteiro:    { gx: 7, gy: 6, w: 3, cadeira: [8, 7], balcao: true },
+  busca:   { gx: 1, gy: 2, w: 2, cadeira: [1, 3] },               // buscar vagas na Gupy/Remotive
+  agente:  { gx: 4, gy: 2, w: 2, cadeira: [4, 3] },               // a mesa do agente: onde ele "pensa"
+  analise: { gx: 7, gy: 2, w: 2, cadeira: [7, 3] },               // ler as vagas e dar notas
+  chefe:   { gx: 2, gy: 6, w: 3, cadeira: [3, 7], chefe: true },  // a mesa do chefe (Iuran)
+  envio:   { gx: 7, gy: 6, w: 3, cadeira: [8, 7], balcao: true }, // montar e enviar o e-mail
 };
-const telaAtiva = {}; // id → a tela do computador está ligada?
+const telaAtiva = {}; // mesa → a tela do computador está ligada?
 export function ligarTela(id, sim) { telaAtiva[id] = sim; }
 
 for (const [id, m] of Object.entries(MESAS)) {
@@ -125,7 +125,7 @@ for (const [id, m] of Object.entries(MESAS)) {
       const p = iso(m.gx + 2.4, m.gy + 0.7, 9); px(p.x - 3, p.y - 2, 6, 2, "#d4a017");
     }
     if (m.balcao) { const e = iso(m.gx + 2.3, m.gy + 0.5, 9); px(e.x, e.y - 3, 4, 3, "#fffdf3"); px(e.x + 2, e.y - 5, 4, 3, "#f4f0e0"); }
-    if (id === "analista" && ligada && Math.floor(t / 350) % 2) { const p = iso(m.gx + 1.5, m.gy + 0.6, 9); px(p.x, p.y - 3, 4, 2, "#fffdf3"); }
+    if (id === "analise" && ligada && Math.floor(t / 350) % 2) { const p = iso(m.gx + 1.5, m.gy + 0.6, 9); px(p.x, p.y - 3, 4, 2, "#fffdf3"); }
   });
   // cadeira (só o assento; o personagem senta em cima)
   const [cx, cy] = m.cadeira;
@@ -207,12 +207,23 @@ movel(17, 10, 1, 1, () => { // planta
 });
 // ---------- Lugares de trabalho e de descanso ----------
 // dir: para onde o personagem olha ("nx" = gx-, "ny" = gy-, "px" = gx+, "py" = gy+)
+const sentar = (mesa, extra = {}) => ({ gx: MESAS[mesa].cadeira[0], gy: MESAS[mesa].cadeira[1], dir: "ny", mesa, ...extra });
+
+// Cada tipo de trabalho do agente acontece num lugar do escritório
 export const ESTACOES = {
-  coordenador: [{ gx: 2, gy: 1, dir: "ny", fala: "Quero esse quadro cheio de 10!" }, { gx: 1, gy: 4, dir: "ny", fala: "Bia, mais vagas!" }, { gx: 7, gy: 4, dir: "ny", fala: "Otávio, isso é nota 10, né?" }, { gx: 8, gy: 8, dir: "ny", fala: "Sônia, manda tudo!" }],
-  analista:    [{ gx: 3, gy: 1, dir: "ny", fala: "Atualizando o quadro" }, { gx: 9, gy: 1, dir: "ny", fala: "Conferindo o arquivo" }],
-  buscador:    [{ gx: 9, gy: 1, dir: "ny", fala: "Arquivando vagas!" }, { gx: 1, gy: 8, dir: "nx", fala: "Os servidores tão quentes!" }],
-  linkedin:    [{ gx: 1, gy: 5, dir: "nx", fala: "Que oportunidade incrível 🙏", celular: true }, { gx: 1, gy: 9, dir: "nx", fala: "Gratidão, servidor" }],
-  carteiro:    [{ gx: 5, gy: 1, dir: "ny", fala: "Imprimindo o relatório" }, { gx: 9, gy: 10, dir: "px", fala: "Separando os envelopes" }],
+  pensar:   sentar("agente"),                                        // o modelo decidindo o próximo passo
+  buscar:   sentar("busca"),                                         // buscar_vagas_gupy / buscar_vagas_remotive
+  linkedin: { gx: 1, gy: 5, dir: "nx", celular: true },              // ler_alertas_linkedin (celular, perto da janela)
+  ler:      sentar("analise"),                                       // ver_detalhes_vaga
+  nota:     { gx: 2, gy: 1, dir: "ny", fala: "Atualizando o quadro de notas" }, // registrar_avaliacao
+  enviar:   sentar("envio"),                                         // montando o e-mail
+  correio:  { gx: 9, gy: 10, dir: "px" },                            // levando as vagas até a caixa de correio
+  // lugares extras para a rotina "ao vivo" e para o chefe
+  arquivo:  { gx: 9, gy: 1, dir: "ny", fala: "Arquivando vagas" },
+  servidor: { gx: 1, gy: 8, dir: "nx", fala: "Conferindo os servidores" },
+  impressora: { gx: 5, gy: 1, dir: "ny", fala: "Imprimindo o relatório" },
+  chefe:    sentar("chefe"),
+  visita:   { gx: 4, gy: 4, dir: "ny", fala: "E aí, achou alguma boa?" },
 };
 export const DESCANSO = [
   { gx: 12, gy: 1, dir: "ny", acao: "cafe", fala: "☕ Expresso duplo" },
@@ -329,8 +340,48 @@ function desenharPisoEParedes(t, notas) {
 // =============================================================
 // 5. PERSONAGENS (7 x 14 pixels)
 // =============================================================
+
+// O agente de IA é um robozinho: assim fica claro quem é a IA
+function desenharRobo(P, ag, t, x, y) {
+  const costas = ag.dir === "nx" || ag.dir === "ny";
+  const anda = ag.andando ? Math.floor(t / 140) % 2 : 0;
+  const sentado = ag.sentado || ag.pose === "sofa" || ag.pose === "dormir";
+  const dormindo = ag.pose === "dormir";
+  const digita = ag.digitando ? Math.floor(t / 120) % 2 : 0;
+  const bx = Math.round(x) - 3, top = Math.round(y) - 14 + (sentado ? 3 : 0);
+  const metal = "#c9d2de", sombra = "#8e9aaa", visor = "#1d2433";
+
+  P(bx + 1, Math.round(y) - 1, 5, 2, "rgba(0,0,0,.25)");
+  // antena com luz (pisca rápido quando está trabalhando)
+  P(bx + 3, top - 2, 1, 2, sombra);
+  P(bx + 3, top - 3, 1, 1, ag.ativo ? (Math.floor(t / 200) % 2 ? "#5ad17a" : "#f2b544") : "#5a6170");
+  // pernas
+  if (!sentado) { P(bx + 1, top + 11, 2, anda ? 2 : 3, sombra); P(bx + 4, top + 11, 2, anda ? 3 : 2, sombra); P(bx + 1, top + 13 - (anda ? 1 : 0), 2, 1, "#4a5260"); P(bx + 4, top + 13 - (anda ? 0 : 1), 2, 1, "#4a5260"); }
+  else if (!costas) { P(bx + 1, top + 11, 5, 1, sombra); }
+  // corpo com o crachá "RH" e luz no peito
+  P(bx + 1, top + 6, 5, 5, metal); P(bx + 1, top + 10, 5, 1, sombra);
+  if (!costas) { P(bx + 2, top + 7, 3, 2, "#2f3b55"); P(bx + 3, top + 7, 1, 1, ag.ativo ? "#5ad17a" : "#3a4a6a"); }
+  // braços
+  P(bx, top + 6 + (digita ? 1 : 0), 1, 4, sombra); P(bx + 6, top + 6 + (digita ? 0 : 1), 1, 4, sombra);
+  // cabeça com visor
+  P(bx, top, 7, 6, metal); P(bx, top + 5, 7, 1, sombra);
+  if (!costas) {
+    P(bx + 1, top + 1, 5, 3, visor);
+    if (dormindo) { P(bx + 2, top + 2, 1, 1, "#3a6a8a"); P(bx + 4, top + 2, 1, 1, "#3a6a8a"); }
+    else {
+      const olhar = ag.digitando ? Math.floor(t / 260) % 2 : 0; // olhos "lendo" a tela
+      const cor = ag.ativo ? "#7fe0ff" : "#4aa8d0";
+      if ((t + ag.semente) % 3000 > 120) { P(bx + 2 + olhar, top + 2, 1, 1, cor); P(bx + 4 + olhar, top + 2, 1, 1, cor); }
+    }
+  }
+  if (ag.celular) P(bx + 6, top + 6, 2, 3, "#222");
+  if (ag.carregando) { P(bx + 5, top + 7, 4, 3, "#fffdf3"); P(bx + 6, top + 8, 2, 1, "#c0392b"); }
+  if (ag.pose === "cafe" || ag.segurandoCafe) { P(bx + 6, top + 7, 3, 3, "#fff"); P(bx + 7, top + 7, 1, 1, "#6e4826"); }
+}
+
 export function desenharPessoa(alvo, d, ag, t, x, y) {
   const P = (a, b, w, h, cor) => { alvo.fillStyle = cor; alvo.fillRect(Math.round(a), Math.round(b), w, h); };
+  if (d.tipo === "robo") return desenharRobo(P, ag, t, x, y);
   const costas = ag.dir === "nx" || ag.dir === "ny";
   const espelho = ag.dir === "py" || ag.dir === "nx"; // olhando para a esquerda da tela
   const anda = ag.andando ? Math.floor(t / 140) % 2 : 0;
@@ -347,10 +398,19 @@ export function desenharPessoa(alvo, d, ag, t, x, y) {
     P(bx + 1, top + 13 - (anda ? 1 : 0), 2, 1, "#1b1b1b"); P(bx + 4, top + 13 - (anda ? 0 : 1), 2, 1, "#1b1b1b");
   }
   // corpo e braços
-  P(bx + 1, top + 6, 5, 5, d.camisa);
-  if (d.gravata && !costas) P(bx + 3, top + 6, 1, 4, d.gravata);
-  P(bx, top + 6 + (digita ? 1 : 0), 1, 4, d.camisa); P(bx + 6, top + 6 + (digita ? 0 : 1), 1, 4, d.camisa);
-  P(bx, top + 10 + (digita ? 1 : 0), 1, 1, d.pele); P(bx + 6, top + 10 + (digita ? 0 : 1), 1, 1, d.pele);
+  if (d.oversize) {
+    // camiseta oversize: mais larga, mais comprida e com mangas largas
+    P(bx, top + 6, 7, 6, d.camisa); P(bx - 1, top + 6, 1, 3, d.camisa); P(bx + 7, top + 6, 1, 3, d.camisa);
+    if (!costas) { // estampa de espada (genérica), apontando para baixo
+      P(bx + 3, top + 7, 1, 1, "#8a6a3a"); P(bx + 2, top + 8, 3, 1, "#7a7a82"); P(bx + 3, top + 9, 1, 3, "#e4e4ea"); P(bx + 5, top + 10, 1, 1, "#b03030");
+    }
+    P(bx - 1, top + 9 + (digita ? 1 : 0), 1, 2, d.pele); P(bx + 7, top + 9 + (digita ? 0 : 1), 1, 2, d.pele);
+  } else {
+    P(bx + 1, top + 6, 5, 5, d.camisa);
+    if (d.gravata && !costas) P(bx + 3, top + 6, 1, 4, d.gravata);
+    P(bx, top + 6 + (digita ? 1 : 0), 1, 4, d.camisa); P(bx + 6, top + 6 + (digita ? 0 : 1), 1, 4, d.camisa);
+    P(bx, top + 10 + (digita ? 1 : 0), 1, 1, d.pele); P(bx + 6, top + 10 + (digita ? 0 : 1), 1, 1, d.pele);
+  }
   // cabeça
   const hx = bx + (dormindo ? 1 : 0), ht = top;
   P(hx + 1, ht + 1, 5, 5, d.pele); P(hx + 1, ht, 5, 2, d.cabelo);
@@ -359,9 +419,10 @@ export function desenharPessoa(alvo, d, ag, t, x, y) {
   if (costas) P(hx + 1, ht + 1, 5, 4, d.cabelo);
   else if (dormindo) { P(hx + 2, ht + 3, 1, 1, "#7a5a3a"); P(hx + 4, ht + 3, 1, 1, "#7a5a3a"); }
   else {
-    const o = espelho ? -1 : 1;
-    if ((t + ag.semente) % 3300 > 140) { P(hx + 2 + (o > 0 ? 1 : 0), ht + 3, 1, 1, "#1b1b1b"); P(hx + 4 + (o > 0 ? 1 : 0) - (o < 0 ? 1 : 0), ht + 3, 1, 1, "#1b1b1b"); }
-    P(hx + 3 + (o > 0 ? 1 : 0), ht + 5, 1, 1, "#c07a5a");
+    const o = espelho ? -1 : 1, olhos = d.olhos ?? "#1b1b1b";
+    if ((t + ag.semente) % 3300 > 140) { P(hx + 2 + (o > 0 ? 1 : 0), ht + 3, 1, 1, olhos); P(hx + 4 + (o > 0 ? 1 : 0) - (o < 0 ? 1 : 0), ht + 3, 1, 1, olhos); }
+    if (d.cavanhaque) { P(hx + 2 + (o > 0 ? 1 : 0), ht + 4, 3, 1, d.cabelo); P(hx + 3 + (o > 0 ? 1 : 0), ht + 5, 1, 1, d.cabelo); }
+    else P(hx + 3 + (o > 0 ? 1 : 0), ht + 5, 1, 1, "#c07a5a");
   }
   // acessórios
   if (d.acessorio === "oculos" && !costas && !dormindo) { P(hx + 1, ht + 3, 5, 1, "#1b1b1b"); P(hx + 2, ht + 3, 1, 1, "#9fd8ff"); P(hx + 4, ht + 3, 1, 1, "#9fd8ff"); }

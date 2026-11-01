@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agência Agente-RH</title>
-<meta name="description" content="Os agentes de IA que procuram vagas para mim, trabalhando num escritório em pixel art.">
+<meta name="description" content="O meu agente de IA procurando vagas de emprego, num escritório em pixel art isométrico.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -119,7 +119,7 @@
   <header>
     <div>
       <h1>AGÊNCIA AGENTE-RH</h1>
-      <p class="sub">Os agentes de IA que procuram vagas de emprego para mim. Quem está trabalhando fica no escritório; quem está livre, na sala de descanso.</p>
+      <p class="sub">O meu agente de IA procura vagas de emprego para mim. Quando está trabalhando, vai até a mesa de cada ferramenta; quando para, vai para a sala de descanso.</p>
     </div>
     <div class="botoes">
       <button class="botao" id="btnReproduzir">▶ Reproduzir última execução</button>
@@ -128,7 +128,7 @@
   </header>
 
   <div class="cena">
-    <canvas id="tela" width="256" height="180" aria-label="Escritório e sala de descanso em pixel art com os cinco agentes"></canvas>
+    <canvas id="tela" width="256" height="180" aria-label="Escritório e sala de descanso em pixel art isométrico com o agente e o chefe"></canvas>
     <div class="camada" id="placas"></div>
     <div class="camada" id="baloes"></div>
     <div class="faixa"><span class="luz" id="luzModo"></span><span id="textoModo">Carregando…</span></div>
@@ -191,18 +191,23 @@
 
 <script type="module">
 // =============================================================
-// AGÊNCIA AGENTE-RH: o escritório dos agentes
+// AGÊNCIA AGENTE-RH: o escritório do agente
 // -------------------------------------------------------------
 // A cena (desenho isométrico, móveis, busca de caminho) fica em
-// cena.js. Este script decide QUEM está ativo, a partir dos dados:
+// cena.js. Este script decide o que cada personagem faz, a partir
+// dos dados reais:
 //  - branch "painel-dados": diário da última execução e histórico,
 //    publicados pelo GitHub Actions no fim de cada execução
 //  - API do GitHub: se há uma execução rodando AGORA na nuvem
 //
-// Regra: agente ATIVO fica no escritório fazendo a rotina de trabalho;
-// agente INATIVO vai para a sala de descanso.
+// Personagens:
+//  - o AGENTE (um robô): é o único agente do projeto. Ele vai até a
+//    estação da ferramenta que está usando em cada momento.
+//  - o CHEFE (Iuran): supervisiona quando o agente trabalha e recebe
+//    o e-mail no fim.
+// Quem não está trabalhando vai para a sala de descanso.
 // =============================================================
-import { W, H, usarContexto, desenharCena, desenharPessoa, centro, caminho, sala, MESAS, ESTACOES, DESCANSO, ligarTela, estado as estadoCena } from "./cena.js";
+import { W, H, usarContexto, desenharCena, desenharPessoa, centro, caminho, sala, ESTACOES, DESCANSO, ligarTela, estado as estadoCena } from "./cena.js";
 
 const REPO = "Iuran-Freire/Agente-Rh";
 const URL_DADOS = `https://raw.githubusercontent.com/${REPO}/painel-dados/`;
@@ -213,57 +218,55 @@ document.getElementById("linkRepo").href = `https://github.com/${REPO}`;
 const tela = document.getElementById("tela");
 usarContexto(tela.getContext("2d"));
 
-// ---------- A equipe ----------
-// O id é o mesmo que o agente usa no diário (src/painel.ts)
+// ---------- Os personagens ----------
 const EQUIPE = {
-  coordenador: {
-    nome: "Sr. Valdir", cargo: "Gerente", camisa: "#2f3b55", gravata: "#c0392b", cabelo: "#5a3a22", pele: "#f1c27d", calca: "#232a3b",
-    personalidade: "Se acha o melhor chefe do mundo. Delega tudo, adora uma frase de efeito e nunca lê o perfil.md até o fim.",
-    codigo: "o modelo (Claude). A cada passo do loop ele decide qual ferramenta usar e qual funcionário chamar.",
+  agente: {
+    tipo: "robo", nome: "Agente de Vagas", cargo: "Agente de IA (Claude + 5 ferramentas)", cor: "#7fe0ff",
+    personalidade: "Trabalha sozinho, num loop: pensa, escolhe uma ferramenta, observa o resultado e repete até terminar. Todo dia às 9h30 ele sai da sala de descanso e vai procurar vagas para o chefe.",
+    codigo: "src/agente.ts (o loop) e src/ferramentas.ts. Cada mesa do escritório é uma ferramenta.",
   },
-  analista: {
-    nome: "Otávio", cargo: "Recrutador de RH", camisa: "#8a7a5a", cabelo: "#2a2a2a", pele: "#e8b48a", calca: "#3b3b46", acessorio: "oculos",
-    personalidade: "Calmo, metódico, leva o seu perfil a sério. Sempre avisa quando a vaga pede inglês avançado. O gerente vive ignorando ele.",
-    codigo: "ver_detalhes_vaga e registrar_avaliacao. Lê cada vaga e dá as notas por critério.",
-  },
-  buscador: {
-    nome: "Bia", cargo: "Estagiária de busca", camisa: "#4fb06d", cabelo: "#d0503a", pele: "#f5d0a9", calca: "#2b3245", acessorio: "lupa", cabeloLongo: true,
-    personalidade: "Animada demais. Abre 30 abas por minuto e comemora cada vaga encontrada, mesmo as de sênior.",
-    codigo: "buscar_vagas_gupy e buscar_vagas_remotive. Procura vagas nas plataformas.",
-  },
-  linkedin: {
-    nome: "Kléber", cargo: "Networker", camisa: "#4a8fe0", cabelo: "#111111", pele: "#c68642", calca: "#2b2b3a", acessorio: "bone",
-    personalidade: "Vive no LinkedIn. Escreve 'gratidão' em tudo e chama os alertas de vaga de 'oportunidades incríveis'.",
-    codigo: "ler_alertas_linkedin. Lê os alertas que o LinkedIn manda para o Gmail.",
-  },
-  carteiro: {
-    nome: "Sônia", cargo: "Recepcionista", camisa: "#c25b8a", cabelo: "#2a1a10", pele: "#8d5524", calca: "#2b2b3a", acessorio: "fone", coque: true,
-    personalidade: "Sabe de tudo e lembra de todas as vagas que já foram enviadas. Nenhuma vaga repetida passa por ela.",
-    codigo: "o envio do e-mail e a memória (vagas-vistas.json).",
+  chefe: {
+    nome: "Iuran", cargo: "O chefe (e criador do agente)", cor: "#d0503a",
+    camisa: "#1c1c22", cabelo: "#6b4226", pele: "#f3cfb0", calca: "#2a2a30", olhos: "#3aa35a", cavanhaque: true, oversize: true,
+    personalidade: "Estudante de ADS em Manaus. Criou o agente para procurar vagas de dados, BI e desenvolvimento enquanto ele estuda. Supervisiona o trabalho e recebe as vagas por e-mail.",
+    codigo: "perfil.md: o agente lê este arquivo para saber o que o chefe procura.",
   },
 };
 const IDS = Object.keys(EQUIPE);
 
+// Cada evento do diário vira uma estação do escritório (o "agente" do
+// evento, gravado por src/painel.ts, diz qual ferramenta foi usada)
+const TAREFAS = {
+  coordenador: { estacao: "pensar",   icone: "🧠", rotulo: "Pensando",            cor: "#f2b544" },
+  buscador:    { estacao: "buscar",   icone: "🔍", rotulo: "Buscando vagas",      cor: "#4fb06d" },
+  linkedin:    { estacao: "linkedin", icone: "📱", rotulo: "Lendo o LinkedIn",    cor: "#4a8fe0" },
+  analista:    { estacao: "ler",      icone: "📋", rotulo: "Analisando vagas",    cor: "#a66ad8" },
+  carteiro:    { estacao: "enviar",   icone: "📧", rotulo: "Enviando o e-mail",   cor: "#e06060" },
+};
+function estacaoDoEvento(e) {
+  if (e.agente === "analista" && e.acao.startsWith("Dando nota")) return "nota";
+  return TAREFAS[e.agente]?.estacao ?? "pensar";
+}
+
 // =============================================================
 // 1. MOVIMENTO
 // =============================================================
-const VELOCIDADE = 2.4; // tiles por segundo
+const VELOCIDADE = 2.6; // tiles por segundo
 const ocupado = new Map(); // lugar de descanso → id de quem está nele
 
 const agentes = Object.fromEntries(IDS.map((id, i) => {
-  const lugar = DESCANSO[i];
+  const lugar = DESCANSO[i * 3];
   ocupado.set(lugar, id);
   return [id, { id, gx: lugar.gx, gy: lugar.gy, dir: lugar.dir, pose: lugar.acao, lugar, rota: [], andando: false,
-    ativo: false, sentado: false, digitando: false, espera: 800 + i * 700, balao: "", balaoAte: 0, semente: i * 911 }];
+    ativo: false, sentado: false, digitando: false, espera: 800 + i * 900, balao: "", balaoAte: 0, semente: i * 911, mesa: null }];
 }));
 
-function cadeira(id) { const [gx, gy] = MESAS[id].cadeira; return { gx, gy, dir: "ny", mesa: true }; }
-
 function irPara(ag, destino) {
+  if (ag.destino === destino && (ag.rota.length || !ag.andando)) { if (!ag.rota.length) chegar(ag); return; }
   const de = { gx: Math.round(ag.gx), gy: Math.round(ag.gy) };
   ag.rota = caminho(de, destino);
   ag.destino = destino;
-  ag.pose = null; ag.sentado = false; ag.digitando = false; ag.celular = false;
+  ag.pose = null; ag.sentado = false; ag.digitando = false; ag.celular = false; ag.mesa = null;
   if (ag.lugar) ocupado.delete(ag.lugar);
   ag.lugar = destino.acao ? destino : null;
   if (ag.lugar) ocupado.set(ag.lugar, ag.id);
@@ -274,7 +277,7 @@ function chegar(ag) {
   const c = ag.destino; ag.andando = false;
   if (!c) return;
   ag.dir = c.dir ?? "py";
-  if (c.mesa) ag.sentado = true;
+  if (c.mesa) { ag.sentado = true; ag.mesa = c.mesa; }
   if (c.acao) ag.pose = c.acao;
   if (c.celular) ag.celular = true;
   if (c.acao === "cafe") ag.segurandoCafe = true;
@@ -293,36 +296,39 @@ function mover(ag, dt) {
 
 function falar(ag, texto, ms, agora = performance.now()) { ag.balao = texto; ag.balaoAte = agora + ms; }
 
-// Rotina de quem está ATIVO: mesa → uma estação de trabalho → mesa → ...
-function rotinaTrabalho(ag, dt) {
-  if (ag.rota.length) return;
-  ag.espera -= dt * 1000;
-  if (ag.espera > 0) return;
-  if (!ag.sentado) {
-    ag.segurandoCafe = false;
-    irPara(ag, cadeira(ag.id));
-    ag.espera = 4000 + Math.random() * 3000;
-  } else {
-    const opcoes = ESTACOES[ag.id];
-    irPara(ag, opcoes[Math.floor(Math.random() * opcoes.length)]);
-    ag.espera = 1800 + Math.random() * 1500;
-    if (ag.id === "carteiro") { estadoCena.imprimindo = true; setTimeout(() => (estadoCena.imprimindo = false), 4000); }
-  }
-}
-
-// Rotina de quem está INATIVO: escolhe um lugar livre na sala de descanso
+// Descanso: escolhe um lugar livre na sala de descanso de vez em quando
 function rotinaDescanso(ag, dt) {
   if (ag.rota.length) return;
   ag.espera -= dt * 1000;
   if (ag.espera > 0 && sala(ag.gx) === "descanso") return;
   const livres = DESCANSO.filter(l => !ocupado.has(l) || ocupado.get(l) === ag.id);
   const lugar = livres[Math.floor(Math.random() * livres.length)];
-  if (lugar !== ag.lugar || sala(ag.gx) !== "descanso") irPara(ag, lugar);
+  irPara(ag, lugar);
   ag.espera = 6000 + Math.random() * 9000;
 }
 
+// Chefe trabalhando: fica na mesa dele e às vezes passa para ver o agente
+function rotinaChefe(ag, dt) {
+  if (ag.rota.length) return;
+  ag.espera -= dt * 1000;
+  if (ag.espera > 0) return;
+  if (ag.sentado || Math.random() < 0.25) { irPara(ag, ESTACOES.visita); ag.espera = 2500; }
+  else { irPara(ag, ESTACOES.chefe); ag.espera = 7000 + Math.random() * 5000; }
+}
+
+// Agente "ao vivo" (sem o diário ainda): circula pelas estações na ordem do loop
+const CICLO = ["pensar", "buscar", "linkedin", "pensar", "ler", "nota", "pensar", "arquivo"];
+function rotinaAoVivo(ag, dt) {
+  if (ag.rota.length) return;
+  ag.espera -= dt * 1000;
+  if (ag.espera > 0) return;
+  ag.ciclo = ((ag.ciclo ?? -1) + 1) % CICLO.length;
+  irPara(ag, ESTACOES[CICLO[ag.ciclo]]);
+  ag.espera = 3500 + Math.random() * 2000;
+}
+
 // =============================================================
-// 2. MODOS (quem está ativo)
+// 2. MODOS
 // =============================================================
 let modo = "ocioso";
 const estado = { status: null, historico: [], runs: [] };
@@ -338,17 +344,17 @@ function ativar(ag, sim) {
   if (ag.ativo === sim) return;
   ag.ativo = sim;
   ag.espera = sim ? 0 : 300 + Math.random() * 1200;
-  if (sim) falar(ag, ["Voltando ao trabalho!", "Já vou!", "Partiu!"][Math.floor(Math.random() * 3)], 1500);
+  if (sim) falar(ag, ag.id === "agente" ? "Hora de trabalhar!" : "Vamos ver o que ele acha hoje", 1800);
 }
 
 function entrarOcioso() {
   definirModo("ocioso", "Todos na sala de descanso · próxima execução às 9h30");
   reproducao = null;
-  for (const ag of Object.values(agentes)) { ativar(ag, false); ag.carregando = false; }
+  for (const ag of Object.values(agentes)) { ativar(ag, false); ag.carregando = false; ag.tarefa = null; }
 }
 
 function entrarAoVivo() {
-  definirModo("aovivo", "AO VIVO · a equipe está trabalhando na nuvem agora");
+  definirModo("aovivo", "AO VIVO · o agente está trabalhando na nuvem agora");
   reproducao = null;
   for (const ag of Object.values(agentes)) ativar(ag, true);
 }
@@ -357,35 +363,53 @@ function reproduzir() {
   const s = estado.status;
   if (!s?.eventos?.length) return;
   const fimReal = Math.max(...s.eventos.map(e => e.inicio_ms + e.duracao_ms));
-  const k = Math.min(1, 45000 / fimReal); // execuções longas cabem em ~45 s
-  reproducao = { t0: performance.now() + 1500, eventos: s.eventos.map(e => ({ ...e, s: e.inicio_ms * k, d: Math.max(1200, e.duracao_ms * k) })), fim: fimReal * k + 1200, terminou: false };
+  const k = Math.min(1, 50000 / fimReal); // execuções longas cabem em ~50 s
+  // Cada tarefa dura pelo menos o tempo de o robô andar até a estação e trabalhar um pouco
+  let fimAnterior = 0;
+  const eventos = s.eventos.map(e => {
+    const s0 = Math.max(e.inicio_ms * k, fimAnterior);
+    const d = Math.max(3200, e.duracao_ms * k);
+    fimAnterior = s0 + d;
+    return { ...e, s: s0, d, estacao: estacaoDoEvento(e) };
+  });
+  reproducao = { t0: performance.now() + 2500, eventos, fim: fimAnterior, terminou: false, atual: -1 };
   estadoCena.correioCheio = false;
   definirModo("reproducao", `Reprisando a execução de ${formatarData(s.inicio)}${s.exemplo ? " (exemplo)" : ""}`);
+  for (const ag of Object.values(agentes)) { ativar(ag, true); ag.carregando = false; ag.celular = false; ag.tarefa = null; }
   desenharDiario();
 }
 
 function atualizarReproducao(agora) {
-  const r = reproducao, tRel = agora - r.t0;
-  // Ativo = tem tarefa agora ou terá em breve. A folga evita que o
-  // personagem fique indo e voltando da sala de descanso.
-  for (const ag of Object.values(agentes)) {
-    const dele = r.eventos.filter(e => e.agente === ag.id);
-    const agoraMesmo = dele.find(e => tRel >= e.s && tRel < e.s + e.d);
-    ativar(ag, dele.some(e => tRel >= e.s - 2500 && tRel < e.s + e.d + 7000));
-    ag.tarefaAgora = !!agoraMesmo;
-    if (agoraMesmo) { ag.balao = agoraMesmo.acao; ag.balaoAte = agora + 250; }
+  const r = reproducao, tRel = agora - r.t0, robo = agentes.agente;
+  const i = r.eventos.findIndex(e => tRel >= e.s && tRel < e.s + e.d);
+  if (i >= 0) {
+    const e = r.eventos[i];
+    if (i !== r.atual) { r.atual = i; irPara(robo, ESTACOES[e.estacao]); }
+    robo.tarefa = e;
+    robo.balao = `${TAREFAS[e.agente]?.icone ?? ""} ${e.acao}`; robo.balaoAte = agora + 250;
   }
   marcarDiario(tRel);
+
   if (!r.terminou && tRel > r.fim) {
     r.terminou = true;
-    const s = estado.status, sonia = agentes.carteiro;
+    robo.tarefa = null;
+    const s = estado.status, chefe = agentes.chefe;
+    // Os temporizadores só agem se ESTA reprise ainda for a atual
+    // (se alguém clicar em "Reproduzir" de novo, eles são ignorados)
+    const estaReprise = r;
     if (s.email_enviado) {
-      ativar(sonia, true); sonia.carregando = true;
-      irPara(sonia, { gx: 9, gy: 10, dir: "px" }); sonia.espera = 5000;
-      falar(sonia, `📬 ${s.novas_enviadas} vaga(s) enviada(s)!`, 5000);
-      setTimeout(() => { sonia.carregando = false; estadoCena.correioCheio = true; }, 4500);
-    } else falar(agentes.coordenador, "Nada novo hoje. Amanhã tem mais!", 4000);
-    setTimeout(() => { if (modo === "reproducao") entrarOcioso(); }, 8000);
+      robo.carregando = true;
+      irPara(robo, ESTACOES.correio);
+      falar(robo, `📬 ${s.novas_enviadas} vaga(s) enviada(s)!`, 4500);
+      setTimeout(() => {
+        if (reproducao !== estaReprise) return;
+        robo.carregando = false; estadoCena.correioCheio = true; chefe.celular = true;
+        falar(chefe, `📧 Chegaram ${s.novas_enviadas} vaga(s)! Valeu, robô`, 4500);
+      }, 4000);
+    } else {
+      falar(robo, "Nada novo hoje. Amanhã tem mais!", 4000);
+    }
+    setTimeout(() => { if (reproducao === estaReprise) entrarOcioso(); }, 10000);
   }
 }
 
@@ -406,12 +430,18 @@ function quadro(agora) {
   if (modo === "reproducao" && reproducao) atualizarReproducao(agora);
   while (falta > 0) {
     const dt = Math.min(0.05, falta); falta -= dt;
-    for (const ag of Object.values(agentes)) { if (ag.ativo) rotinaTrabalho(ag, dt); else rotinaDescanso(ag, dt); mover(ag, dt); }
+    for (const ag of Object.values(agentes)) {
+      if (!ag.ativo) rotinaDescanso(ag, dt);
+      else if (ag.id === "chefe") rotinaChefe(ag, dt);
+      else if (modo === "aovivo") rotinaAoVivo(ag, dt);
+      mover(ag, dt);
+    }
   }
+  // Telas acesas: a mesa onde alguém está sentado trabalhando
+  for (const mesa of ["busca", "agente", "analise", "chefe", "envio"]) ligarTela(mesa, false);
   for (const ag of Object.values(agentes)) {
-    // Digita (e a tela liga) quem está sentado na própria mesa e trabalhando
-    ag.digitando = ag.sentado && ag.ativo && (modo !== "reproducao" || ag.tarefaAgora);
-    ligarTela(ag.id, ag.sentado && ag.ativo);
+    ag.digitando = ag.sentado && ag.ativo;
+    if (ag.mesa && ag.ativo) ligarTela(ag.mesa, true);
   }
 
   desenharCena(agora, Object.values(agentes), EQUIPE, (estado.status?.ranking ?? []).map(v => v.nota));
@@ -420,12 +450,12 @@ function quadro(agora) {
     const c = centro(ag.gx, ag.gy);
     const b = elBalao[ag.id], visivel = ag.balao && agora < ag.balaoAte;
     b.style.opacity = visivel ? 1 : 0;
-    if (visivel) { if (b.textContent !== ag.balao) b.textContent = ag.balao; b.style.left = (c.x / W * 100) + "%"; b.style.top = ((c.y - 17) / H * 100) + "%"; }
+    if (visivel) { if (b.textContent !== ag.balao) b.textContent = ag.balao; b.style.left = (c.x / W * 100) + "%"; b.style.top = ((c.y - 18) / H * 100) + "%"; }
     // A plaquinha com o nome só aparece para quem está sob o mouse
     const p = elPlaca[ag.id]; p.style.display = ag.id === sobMouse ? "block" : "none";
     p.style.left = (c.x / W * 100) + "%"; p.style.top = ((c.y + 1) / H * 100) + "%";
   }
-  if (agora - ultimaEquipe > 500) { atualizarEquipe(); ultimaEquipe = agora; }
+  if (agora - ultimaEquipe > 400) { atualizarEquipe(); ultimaEquipe = agora; }
   requestAnimationFrame(quadro);
 }
 
@@ -436,20 +466,36 @@ const dialogo = document.getElementById("ficha");
 document.getElementById("fecharFicha").onclick = () => dialogo.close();
 dialogo.addEventListener("click", e => { if (e.target === dialogo) dialogo.close(); });
 
+function statusDe(id) {
+  const ag = agentes[id];
+  if (!ag.ativo) return "☕ Na sala de descanso";
+  if (id === "agente" && ag.tarefa) return `🟢 ${TAREFAS[ag.tarefa.agente]?.rotulo ?? "Trabalhando"}`;
+  return id === "agente" ? "🟢 Trabalhando" : "🟢 Supervisionando";
+}
+
 function abrirFicha(id) {
-  const d = EQUIPE[id], ag = agentes[id];
+  const d = EQUIPE[id];
   document.getElementById("fNome").textContent = d.nome;
   document.getElementById("fCargo").textContent = d.cargo;
-  document.getElementById("fAgora").textContent = ag.ativo ? "🟢 Trabalhando no escritório" : "☕ Na sala de descanso";
+  document.getElementById("fAgora").textContent = statusDe(id);
   document.getElementById("fPersonalidade").textContent = d.personalidade;
   document.getElementById("fCodigo").textContent = d.codigo;
-  const tarefas = (estado.status?.eventos ?? []).filter(e => e.agente === id);
   const lista = document.getElementById("fTarefas");
-  lista.replaceChildren(...(tarefas.length ? tarefas.slice(0, 8).map(e => el("li", { textContent: e.acao })) : [el("li", { className: "fraco", textContent: "Ficou de folga." })]));
-  if (tarefas.length > 8) lista.append(el("li", { className: "fraco", textContent: `… e mais ${tarefas.length - 8}` }));
+  const eventos = estado.status?.eventos ?? [];
+  if (id === "agente") {
+    // Quantas vezes ele usou cada ferramenta na última execução
+    const conta = {};
+    for (const e of eventos) conta[e.agente] = (conta[e.agente] || 0) + 1;
+    lista.replaceChildren(...Object.entries(TAREFAS).map(([k, t]) => el("li", { textContent: `${t.icone} ${t.rotulo}: ${conta[k] || 0}x` })));
+  } else {
+    const s = estado.status;
+    lista.replaceChildren(el("li", { textContent: s?.email_enviado ? `Recebeu ${s.novas_enviadas} vaga(s) por e-mail` : "Nenhuma vaga nova chegou" }),
+      el("li", { textContent: s?.ranking?.[0] ? `Melhor vaga: ${s.ranking[0].titulo} (${s.ranking[0].nota})` : "Sem vagas recomendadas" }));
+  }
   const r = document.getElementById("retrato").getContext("2d");
   r.clearRect(0, 0, 14, 18);
-  desenharPessoa(r, d, { id, dir: "px", semente: 1, ativo: false }, 0, 7, 17);
+  // t = 1000: um instante em que ninguém está piscando, para o retrato sair de olhos abertos
+  desenharPessoa(r, d, { id, dir: "px", semente: 1, ativo: true }, 1000, 7, 17);
   dialogo.showModal();
 }
 
@@ -457,7 +503,7 @@ function abrirFicha(id) {
 function quemEstaEm(e) {
   const caixa = tela.getBoundingClientRect();
   const x = (e.clientX - caixa.left) / caixa.width * W, y = (e.clientY - caixa.top) / caixa.height * H;
-  let melhor = null, menor = 9;
+  let melhor = null, menor = 10;
   for (const ag of Object.values(agentes)) { const c = centro(ag.gx, ag.gy), dist = Math.hypot(c.x - x, c.y - 7 - y); if (dist < menor) { menor = dist; melhor = ag.id; } }
   return melhor;
 }
@@ -478,15 +524,15 @@ function atualizarEquipe() {
   const lista = document.getElementById("equipe");
   if (!lista.children.length) {
     lista.replaceChildren(...IDS.map(id => {
-      const cor = el("span", { className: "cor" }); cor.style.background = EQUIPE[id].camisa;
+      const cor = el("span", { className: "cor" }); cor.style.background = EQUIPE[id].cor;
       const li = el("li", {}, [cor, el("div", {}, [el("div", { textContent: EQUIPE[id].nome }), el("div", { className: "cargo", textContent: EQUIPE[id].cargo })]), el("span", { className: "etiqueta" })]);
       li.onclick = () => abrirFicha(id); li.dataset.id = id;
       return li;
     }));
   }
   for (const li of lista.children) {
-    const ag = agentes[li.dataset.id], et = li.querySelector(".etiqueta");
-    const texto = ag.ativo ? "TRABALHANDO" : "DESCANSANDO";
+    const id = li.dataset.id, ag = agentes[id], et = li.querySelector(".etiqueta");
+    const texto = statusDe(id).replace(/^\S+\s/, "").toUpperCase();
     if (et.textContent !== texto) { et.textContent = texto; et.className = "etiqueta" + (ag.ativo ? " trabalhando" : ""); }
   }
 }
@@ -510,10 +556,9 @@ function desenharStatus() {
 function desenharDiario() {
   const s = estado.status; if (!s) return;
   document.getElementById("diario").replaceChildren(...s.eventos.map(e => {
-    const seg = Math.floor(e.inicio_ms / 1000);
-    const ponto = el("span", { className: "ponto" }); ponto.style.background = EQUIPE[e.agente]?.camisa ?? "#888";
-    const quem = EQUIPE[e.agente]?.nome ?? e.agente;
-    return el("li", {}, [el("span", { textContent: `${String(Math.floor(seg / 60)).padStart(2, "0")}:${String(seg % 60).padStart(2, "0")}` }), ponto, el("span", { textContent: `${quem}: ${e.acao}` })]);
+    const seg = Math.floor(e.inicio_ms / 1000), t = TAREFAS[e.agente];
+    const ponto = el("span", { className: "ponto" }); ponto.style.background = t?.cor ?? "#888";
+    return el("li", {}, [el("span", { textContent: `${String(Math.floor(seg / 60)).padStart(2, "0")}:${String(seg % 60).padStart(2, "0")}` }), ponto, el("span", { textContent: `${t?.icone ?? ""} ${e.acao}` })]);
   }));
 }
 
@@ -586,6 +631,7 @@ document.getElementById("btnReproduzir").addEventListener("click", reproduzir);
 
 (async function iniciar() {
   entrarOcioso();
+  atualizarEquipe(); // monta a lista já no início, mesmo se a animação estiver pausada
   requestAnimationFrame(quadro);
   desenharProxima();
   await carregarDados();

@@ -101,10 +101,11 @@ Sem o Gmail configurado, o agente não envia nada. Ele salva uma prévia em
 
 ## Painel: Agência Agente-RH
 
-`docs/index.html` é um painel em pixel art publicado no GitHub Pages. Cada parte do agente é um
-funcionário de uma agência de recrutamento fictícia: quem está trabalhando fica no escritório,
-quem está livre vai para a sala de descanso. A página reencena a última execução real, evento por
-evento, e mostra ao vivo quando o agente está rodando na nuvem. O modelo completo está em
+`docs/index.html` é um painel em pixel art isométrico publicado no GitHub Pages. O agente é um
+robozinho num escritório em que cada mesa é uma ferramenta: ele vai até a mesa da ferramenta que
+está usando, e quando para, vai para a sala de descanso. Eu apareço como o chefe, supervisionando
+e recebendo as vagas por e-mail. A página reencena a última execução real, evento por evento, e
+mostra ao vivo quando o agente está rodando na nuvem. O modelo completo está em
 [`docs/MODELO.md`](docs/MODELO.md).
 
 Os dados vêm do diário que o agente grava (`src/painel.ts`), que o workflow publica na branch
