@@ -1,0 +1,82 @@
+# =============================================================
+# AGENTE NA NUVEM (GitHub Actions)
+# -------------------------------------------------------------
+# O GitHub liga um computador temporário (Linux), roda o agente e
+# desliga. Cada execução começa DO ZERO: nada do que ficou no disco
+# na execução anterior existe mais. Por isso o "chip de memória"
+# (vagas-vistas.json) é guardado no cache do GitHub entre uma
+# execução e outra.
+#
+# Duas formas de rodar:
+#   1. Sozinho, todo dia às 9h30 de Manaus
+#   2. Na mão: aba Actions → "Agente de Vagas" → Run workflow
+#      (também funciona no app GitHub Mobile)
+# =============================================================
+
+name: Agente de Vagas
+
+on:
+  schedule:
+    # O cron do GitHub usa o horário UTC. Manaus é UTC-4 o ano todo
+    # (sem horário de verão), então 9h30 em Manaus = 13h30 UTC.
+    # Atenção: o GitHub pode atrasar execuções agendadas em alguns
+    # minutos quando os servidores estão cheios.
+    - cron: "30 13 * * *"
+  # Cria o botão "Run workflow" (no site e no app do celular)
+  workflow_dispatch:
+
+# Impede duas execuções ao mesmo tempo (ex.: a agendada e uma manual).
+# Duas juntas poderiam ler a mesma memória e mandar vagas repetidas.
+concurrency:
+  group: agente-vagas
+  cancel-in-progress: false
+
+jobs:
+  buscar-vagas:
+    runs-on: ubuntu-latest
+    # Trava de segurança, igual ao MAX_PASSOS do agente
+    timeout-minutes: 20
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar o Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar as dependências
+        # npm ci instala exatamente as versões do package-lock.json
+        run: npm ci
+
+      # ---------- O chip de memória ----------
+      # O cache do GitHub não deixa sobrescrever uma chave que já existe.
+      # Então cada execução SALVA com uma chave nova (memoria-<id da execução>)
+      # e RESTAURA a mais recente que começa com "memoria-".
+      - name: Restaurar a memória (vagas já enviadas)
+        uses: actions/cache/restore@v4
+        with:
+          path: vagas-vistas.json
+          key: memoria-${{ github.run_id }}
+          restore-keys: memoria-
+
+      - name: Rodar o agente
+        run: npm run agente
+        # Os segredos vêm dos "Secrets" do repositório (Settings → Secrets).
+        # O GitHub esconde os valores nos logs e mostra *** no lugar.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USUARIO: ${{ secrets.GMAIL_USUARIO }}
+          GMAIL_SENHA_APP: ${{ secrets.GMAIL_SENHA_APP }}
+          EMAIL_DESTINO: ${{ secrets.EMAIL_DESTINO }}
+
+      - name: Salvar a memória para a próxima execução
+        # always(): salva mesmo se o agente der erro no meio, para não
+        # perder o registro das vagas que já foram enviadas
+        if: always() && hashFiles('vagas-vistas.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: vagas-vistas.json
+          key: memoria-${{ github.run_id }}

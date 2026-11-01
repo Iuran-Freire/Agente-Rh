@@ -97,6 +97,21 @@ npm run agente -- "vagas de estágio em desenvolvimento react"
 Sem o Gmail configurado, o agente não envia nada. Ele salva uma prévia em
 `relatorios/previa-email.html`.
 
+## Rodar na nuvem com GitHub Actions (recomendado)
+
+O workflow `.github/workflows/agente.yml` roda o agente nos servidores do GitHub, sem precisar
+de um PC ligado:
+
+- **Sozinho:** todo dia às 9h30 de Manaus (13h30 UTC).
+- **Na mão, inclusive pelo celular:** no app GitHub Mobile ou no site, abra **Actions → Agente de
+  Vagas → Run workflow**.
+
+Para configurar, cadastre em **Settings → Secrets and variables → Actions → New repository secret**:
+`ANTHROPIC_API_KEY`, `GMAIL_USUARIO` e `GMAIL_SENHA_APP` (e, se quiser, `EMAIL_DESTINO`).
+
+Cada execução na nuvem começa do zero, então a memória (`vagas-vistas.json`) é guardada no
+**cache do GitHub Actions** entre uma execução e outra, e não fica visível no repositório.
+
 ## Rodar sozinho todo dia (Windows)
 
 ```bash
@@ -133,6 +148,7 @@ npm run desagendar
 5. Memória entre execuções + envio de e-mail
 6. Alertas do LinkedIn lidos do Gmail
 7. Execução diária automática pelo Agendador de Tarefas do Windows, com log
+8. Execução na nuvem com GitHub Actions (agendada ou pelo celular), com a memória no cache
 
 ---
 
