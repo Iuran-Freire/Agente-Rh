@@ -1,0 +1,134 @@
+{
+  "inicio": "2026-11-01T22:36:16.304Z",
+  "fim": "2026-11-01T22:36:44.515Z",
+  "duracao_s": 28,
+  "origem": "nuvem",
+  "passos": 5,
+  "resumo": "Avaliei 2 vagas com detalhes e registrei só uma: o estágio em Desenvolvimento de Software / Data Mining, do Instituto Eldorado. É remoto, com Python e SQL, mas exige inglês avançado e Machine Learning, e não informa salário.\n\n- **Descartadas pelo resumo:**\n  - As vagas de dados e BI da Gupy eram quase todas plenas ou sêniores.\n  - As de Manaus eram plenas, sêniores ou de áreas fora do seu perfil (Android, embarcado, QA).\n  - As de estágio em BI ficavam em outras cidades, presenciais ou híbridas.\n  - Várias vagas de desenvolvimento eram antigas (2022 a 2024).\n- **Descartada depois de ler:** a vaga de Desenvolvedor Júnior VTEX Front-End (Quality Digital). Ela pede Go, APIs VTEX, microsserviços e CI/CD, que não estão no seu perfil, e só tem React/Next.js em comum.\n- **LinkedIn:**\n  - Há vagas que podem servir: \"Analista de Dados\" (CTA Engenharia, Manaus), \"Analista de Dados - Home Office\" (Infotec) e \"Junior Software Developer\" (BairesDev).\n  - Não registrei nenhuma, porque o e-mail não traz descrição, nível, salário nem exigência de inglês.\n- **Próxima busca:** termos como \"trainee dados\", \"analista de relatórios\", \"suporte de BI\" e \"estágio TI\" na Gupy, além de buscar na Remotive com \"junior data analyst\". Também vale checar à mão no LinkedIn as vagas da CTA Engenharia em Manaus e da Infotec.",
+  "novas_enviadas": 1,
+  "email_enviado": true,
+  "ranking": [
+    {
+      "titulo": "Estágio em Desenvolvimento de Software / Data Mining",
+      "empresa": "Instituto de Pesquisas ELDORADO",
+      "nota": 6.8,
+      "link": "https://institutoeldorado.gupy.io/job/eyJqb2JJZCI6MTI1Nzc0NTEsInNvdXJjZSI6Imd1cHlfcG9ydGFsIn0=?jobBoardSource=gupy_portal"
+    }
+  ],
+  "eventos": [
+    {
+      "agente": "coordenador",
+      "acao": "Pensando no passo 1",
+      "inicio_ms": 5,
+      "duracao_ms": 3647
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"analista de dados junior\" na Gupy",
+      "inicio_ms": 3653,
+      "duracao_ms": 492
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"power bi\" na Gupy em Manaus",
+      "inicio_ms": 4145,
+      "duracao_ms": 284
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"estágio dados\" na Gupy em Manaus",
+      "inicio_ms": 4429,
+      "duracao_ms": 199
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"desenvolvedor junior\" na Gupy → 4 vaga(s)",
+      "inicio_ms": 4628,
+      "duracao_ms": 86
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"desenvolvedor\" na Gupy em Manaus → 6 vaga(s)",
+      "inicio_ms": 4714,
+      "duracao_ms": 87
+    },
+    {
+      "agente": "linkedin",
+      "acao": "Lendo os alertas do LinkedIn no Gmail → 73 vaga(s)",
+      "inicio_ms": 4801,
+      "duracao_ms": 3522
+    },
+    {
+      "agente": "coordenador",
+      "acao": "Pensando no passo 2",
+      "inicio_ms": 8323,
+      "duracao_ms": 2909
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"analista de dados\" na Gupy → 20 vaga(s)",
+      "inicio_ms": 11232,
+      "duracao_ms": 278
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"estágio desenvolvimento\" na Gupy → 12 vaga(s)",
+      "inicio_ms": 11510,
+      "duracao_ms": 206
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"business intelligence\" na Gupy → 18 vaga(s)",
+      "inicio_ms": 11716,
+      "duracao_ms": 263
+    },
+    {
+      "agente": "buscador",
+      "acao": "Procurando \"front-end\" na Gupy → 8 vaga(s)",
+      "inicio_ms": 11979,
+      "duracao_ms": 86
+    },
+    {
+      "agente": "coordenador",
+      "acao": "Pensando no passo 3",
+      "inicio_ms": 12065,
+      "duracao_ms": 2580
+    },
+    {
+      "agente": "analista",
+      "acao": "Lendo a vaga gupy-12577451",
+      "inicio_ms": 14645,
+      "duracao_ms": 0
+    },
+    {
+      "agente": "analista",
+      "acao": "Lendo a vaga gupy-12745394",
+      "inicio_ms": 14646,
+      "duracao_ms": 0
+    },
+    {
+      "agente": "coordenador",
+      "acao": "Pensando no passo 4",
+      "inicio_ms": 14646,
+      "duracao_ms": 6485
+    },
+    {
+      "agente": "analista",
+      "acao": "Dando nota para a vaga gupy-12577451",
+      "inicio_ms": 21131,
+      "duracao_ms": 0
+    },
+    {
+      "agente": "coordenador",
+      "acao": "Pensando no passo 5",
+      "inicio_ms": 21131,
+      "duracao_ms": 5116
+    },
+    {
+      "agente": "carteiro",
+      "acao": "Enviando 1 vaga(s) por e-mail",
+      "inicio_ms": 26248,
+      "duracao_ms": 1962
+    }
+  ]
+}
