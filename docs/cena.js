@@ -291,43 +291,97 @@ movel(5, 9, 1, 1, () => { // vaso com planta
 });
 
 // ---------- Sala de descanso ----------
-movel(12, 0, 3, 1, t => { // balcão com a cafeteira expresso
-  caixa(12.05, 0.1, 2.9, 0.8, 11, { topo: "#b8875a", esq: "#7a5230", dir: "#8f6038" });
-  caixa(12.25, 0.25, 0.6, 0.5, 9, { topo: "#d8dde6", esq: "#a8adb8", dir: "#bfc4cf" }, 11);
-  const b = iso(12.55, 0.75, 13); px(b.x - 1, b.y, 2, 2, "#ff4a4a");
-  const v = iso(12.55, 0.5, 20); if (Math.floor(t / 450) % 2) px(v.x, v.y - 3, 1, 2, "#e0e0e0"); else px(v.x + 1, v.y - 4, 1, 2, "#e0e0e0");
-  for (const [i, cor] of [[13.3, "#ffffff"], [13.7, "#f2b544"], [14.1, "#5aa7ef"]]) { const c = iso(i, 0.6, 11); px(c.x - 1, c.y - 3, 3, 3, cor); }
-  const g = iso(14.6, 0.5, 11); px(g.x - 1, g.y - 5, 3, 5, "#8a5a3a");
+movel(12, 0, 3, 1, t => { // copa: armário com portas, bancada, cafeteira expresso, micro-ondas
+  caixa(12.05, 0.1, 2.9, 0.8, 10, { topo: "#3a7a7a", esq: "#2a5a5c", dir: "#326a6c" });
+  for (let i = 0; i < 3; i++) { // portas do armário com puxador
+    const a = iso(12.15 + i * 0.95, 0.9, 1.5), b = iso(12.95 + i * 0.95, 0.9, 1.5);
+    poligono([a, b, { x: b.x, y: b.y - 7 }, { x: a.x, y: a.y - 7 }], "#3a8486");
+    px(b.x - 2, b.y - 5, 1, 2, "#d8dde6");
+  }
+  caixa(12.0, 0.05, 3.0, 0.9, 1, { topo: "#e8e2d4", esq: "#b8b0a0", dir: "#cfc8b8" }, 10); // tampo de pedra
+  // cafeteira expresso com luz e vapor
+  caixa(12.2, 0.2, 0.6, 0.5, 9, { topo: "#d8dde6", esq: "#a8adb8", dir: "#bfc4cf" }, 11);
+  caixa(12.25, 0.62, 0.5, 0.1, 2, { topo: "#2a2a2a", esq: "#1b1b1b", dir: "#222" }, 15);
+  const b = iso(12.6, 0.72, 13); px(b.x - 1, b.y, 2, 2, "#ff4a4a");
+  const v = iso(12.5, 0.45, 21); if (Math.floor(t / 450) % 2) px(v.x, v.y - 3, 1, 2, "#e0e0e0"); else px(v.x + 1, v.y - 4, 1, 2, "#e0e0e0");
+  // canecas, pote de grãos e um cactinho
+  for (const [i, cor] of [[13.05, "#ffffff"], [13.35, "#f2b544"], [13.65, "#5aa7ef"]]) { const c = iso(i, 0.65, 11); px(c.x - 1, c.y - 3, 3, 3, cor); px(c.x + 2, c.y - 2, 1, 1, cor); }
+  const g = iso(13.95, 0.45, 11); px(g.x - 1, g.y - 5, 3, 5, "#8a5a3a"); px(g.x - 1, g.y - 6, 3, 1, "#c8a070");
+  // micro-ondas com o relógio piscando
+  caixa(14.2, 0.2, 0.7, 0.55, 6, { topo: "#e8ecf2", esq: "#b8bcc6", dir: "#cfd3dc" }, 11);
+  const mo = iso(14.3, 0.75, 13); px(mo.x - 3, mo.y - 3, 4, 3, "#2a2e3a"); px(mo.x + 2, mo.y - 3, 1, 1, Math.floor(t / 500) % 2 ? "#5ad17a" : "#1a5a2a");
 });
-movel(15, 0, 1, 1, () => { // geladeira com adesivos
+movel(15, 0, 1, 1, () => { // geladeira com puxadores, ímãs e uma caixa de cereal em cima
   caixa(15.08, 0.1, 0.84, 0.8, 36, { topo: "#f4f7fb", esq: "#c8ccd6", dir: "#dde1ea" });
-  const a = iso(15.1, 0.9, 20); px(a.x + 1, a.y, 6, 1, "#a8acb6");
-  const s = iso(15.3, 0.9, 28); px(s.x, s.y, 2, 2, "#ff6b6b"); px(s.x + 3, s.y + 3, 2, 2, "#4d96ff"); px(s.x + 1, s.y + 9, 3, 2, "#ffd93d");
+  const a = iso(15.1, 0.9, 22); px(a.x + 1, a.y, 6, 1, "#a8acb6");
+  const h = iso(15.8, 0.9, 30); px(h.x - 1, h.y, 1, 5, "#8a8e98"); const h2 = iso(15.8, 0.9, 18); px(h2.x - 1, h2.y, 1, 6, "#8a8e98");
+  const s = iso(15.3, 0.9, 30); px(s.x, s.y, 2, 2, "#ff6b6b"); px(s.x + 3, s.y + 3, 2, 2, "#4d96ff"); px(s.x + 1, s.y + 11, 3, 2, "#ffd93d"); px(s.x + 1, s.y + 8, 3, 3, "#fffdf3");
+  caixa(15.35, 0.3, 0.3, 0.2, 6, { topo: "#ffb03a", esq: "#e0702a", dir: "#f08a2a" }, 36);
 });
-movel(17, 2, 1, 1, t => { // fliperama
+movel(16, 0, 2, 1, t => { // rack da TV com videogame, controles e fita de LED
+  caixa(16.1, 0.15, 1.8, 0.7, 6, { topo: "#2a2a34", esq: "#1b1b22", dir: "#22222a" });
+  const led = iso(16.1, 0.85, 1); const led2 = iso(17.9, 0.85, 1);
+  const cor = ["#ff5fae", "#4dd0e1", "#b084ff"][Math.floor(t / 900) % 3];
+  poligono([led, led2, { x: led2.x, y: led2.y - 1 }, { x: led.x, y: led.y - 1 }], cor);
+  caixa(16.3, 0.3, 0.6, 0.4, 2, { topo: "#e8ecf2", esq: "#b8bcc6", dir: "#cfd3dc" }, 6); // console
+  const l = iso(16.85, 0.7, 7); px(l.x, l.y, 1, 1, "#4dd0e1");
+  const c1 = iso(17.3, 0.5, 6); px(c1.x - 2, c1.y - 1, 4, 2, "#3a3f50"); px(c1.x - 1, c1.y - 1, 1, 1, "#ff4a4a");
+  const c2 = iso(17.6, 0.6, 6); px(c2.x - 2, c2.y - 1, 4, 2, "#3a3f50"); px(c2.x, c2.y - 1, 1, 1, "#4dff8a");
+});
+movel(17, 2, 1, 1, t => { // fliperama com letreiro, faixa lateral e moedeiro
   caixa(17.08, 2.1, 0.84, 0.8, 30, { topo: "#4a2a7a", esq: "#2a1a5a", dir: "#3a1a6a" });
+  const f0 = iso(17.92, 2.15, 4), f1 = iso(17.92, 2.85, 4); // faixa colorida na lateral
+  poligono([f0, f1, { x: f1.x, y: f1.y - 22 }, { x: f0.x, y: f0.y - 22 }], "#5a2a9a");
+  poligono([f0, f1, { x: f1.x, y: f1.y - 2 }, { x: f0.x, y: f0.y - 2 }], "#ff5fae");
+  const m0 = iso(17.15, 2.9, 30), m1 = iso(17.85, 2.9, 30); // letreiro aceso
+  poligono([m0, m1, { x: m1.x, y: m1.y + 4 }, { x: m0.x, y: m0.y + 4 }], Math.floor(t / 400) % 2 ? "#ffd93d" : "#ffb03a");
   const s0 = iso(17.15, 2.9, 24), s1 = iso(17.85, 2.9, 24);
   poligono([s0, s1, { x: s1.x, y: s1.y - 8 }, { x: s0.x, y: s0.y - 8 }], Math.floor(t / 300) % 2 ? "#1a8a4a" : "#1a5a8a");
-  px(s0.x + 2 + (Math.floor(t / 250) % 3), s0.y - 5, 2, 2, "#ffd93d");
-  const c = iso(17.5, 2.95, 16); px(c.x - 3, c.y, 1, 2, "#ff4a4a"); px(c.x + 1, c.y, 2, 2, "#4dff8a");
+  px(s0.x + 2 + (Math.floor(t / 250) % 3), s0.y - 5, 2, 2, "#ffd93d"); px(s0.x + 1, s0.y - 2, 5, 1, "#4dff8a");
+  const c = iso(17.5, 2.95, 15); px(c.x - 3, c.y, 1, 2, "#ff4a4a"); px(c.x - 3, c.y - 1, 1, 1, "#1b1b1b"); px(c.x + 1, c.y, 2, 2, "#4dff8a"); px(c.x + 3, c.y + 1, 1, 1, "#4d96ff");
+  const mo = iso(17.5, 2.95, 7); px(mo.x - 1, mo.y, 2, 3, "#1b1b22"); px(mo.x, mo.y + 1, 1, 1, "#ff4a4a");
+  // brilho colorido no chão
+  ctx.globalAlpha = 0.12; poligono([iso(16.6, 2.9), iso(18, 2.9), iso(18, 4.3), iso(16.6, 4.3)], "#7a5cff"); ctx.globalAlpha = 1;
+});
+movel(14, 4, 1, 1, () => { // mesinha de centro com pipoca e controle
+  caixa(14.15, 4.2, 0.7, 0.6, 5, MADEIRA.escura);
+  const p = iso(14.4, 4.45, 5); px(p.x - 2, p.y - 3, 4, 3, "#c0392b"); px(p.x - 1, p.y - 3, 1, 3, "#ffffff"); px(p.x - 2, p.y - 5, 4, 2, "#fff4c0");
+  const c = iso(14.7, 4.6, 5); px(c.x - 1, c.y - 1, 4, 2, "#3a3f50");
 });
 // Sofá e pufe bloqueiam a passagem, mas a busca de caminho deixa
 // alguém chegar neles quando é o destino (para sentar)
-for (let i = 13; i <= 15; i++) movel(i, 6, 1, 1, () => { // sofá (3 lugares), virado para a TV
-  caixa(i, 6.15, 1, 0.7, 6, { topo: "#c75a4a", esq: "#8f3a2f", dir: "#a8483b" });
-  caixa(i, 6.6, 1, 0.3, 13, { topo: "#b0473a", esq: "#7a2f26", dir: "#94402f" });
+for (let i = 13; i <= 15; i++) movel(i, 6, 1, 1, () => { // sofá de 3 lugares, virado para a TV
+  caixa(i + 0.02, 6.15, 0.96, 0.7, 6, { topo: "#c75a4a", esq: "#8f3a2f", dir: "#a8483b" });     // assento
+  caixa(i + 0.06, 6.2, 0.88, 0.5, 1, { topo: "#d66a5a", esq: "#a8483b", dir: "#b85040" }, 6);  // almofada do assento
+  caixa(i, 6.62, 1, 0.3, 14, { topo: "#b0473a", esq: "#7a2f26", dir: "#94402f" });             // encosto
+  if (i === 13) caixa(12.85, 6.15, 0.18, 0.75, 10, { topo: "#a8483b", esq: "#7a2f26", dir: "#8f3a2f" }); // braço esquerdo
+  if (i === 15) caixa(15.97, 6.15, 0.18, 0.75, 10, { topo: "#a8483b", esq: "#7a2f26", dir: "#8f3a2f" }); // braço direito
+  if (i === 13) { const a = iso(13.25, 6.5, 8); px(a.x - 2, a.y - 3, 4, 4, "#ffd93d"); }        // almofada amarela
+  if (i === 15) { const a = iso(15.7, 6.5, 8); px(a.x - 2, a.y - 3, 4, 4, "#4dd0e1"); px(a.x - 4, a.y + 1, 7, 2, "#6a5acd"); } // almofada e mantinha
 });
-movel(17, 9, 1, 1, () => { // pufe
+movel(17, 9, 1, 1, () => { // pufe com costura
   caixa(17.1, 9.1, 0.8, 0.8, 6, { topo: "#6aa8ff", esq: "#3a6ad0", dir: "#4d80e8" });
+  caixa(17.2, 9.2, 0.6, 0.6, 1, { topo: "#7ab8ff", esq: "#4d80e8", dir: "#5a90f0" }, 6);
+  const c = iso(17.5, 9.5, 7); px(c.x - 3, c.y, 6, 1, "#4d80e8");
 });
-movel(12, 9, 1, 1, () => { // mesinha com pizza
-  caixa(12.15, 9.15, 0.7, 0.7, 8, { topo: "#83552e", esq: "#5a3a20", dir: "#6e4826" });
-  const p = iso(12.5, 9.5, 8); px(p.x - 4, p.y - 2, 8, 3, "#e2b866"); px(p.x - 2, p.y - 1, 1, 1, "#c0392b"); px(p.x + 2, p.y - 2, 1, 1, "#c0392b");
+movel(12, 9, 1, 1, () => { // mesinha com caixa de pizza aberta e refrigerante
+  caixa(12.45, 9.45, 0.1, 0.1, 7, METAL);
+  caixa(12.1, 9.1, 0.8, 0.8, 1, MADEIRA.escura, 7);
+  const p = iso(12.45, 9.45, 8); px(p.x - 5, p.y - 2, 9, 4, "#f4f0e0"); px(p.x - 4, p.y - 2, 7, 3, "#e2b866");
+  px(p.x - 2, p.y - 1, 1, 1, "#c0392b"); px(p.x + 1, p.y - 2, 1, 1, "#c0392b"); px(p.x - 3, p.y, 1, 1, "#3f8f4a");
+  const r = iso(12.8, 9.7, 8); px(r.x, r.y - 4, 2, 4, "#c0392b"); px(r.x, r.y - 3, 2, 1, "#fff");
 });
-movel(17, 10, 1, 1, () => { // planta
-  caixa(17.3, 10.3, 0.4, 0.4, 5, { topo: "#7a4020", esq: "#a0552d", dir: "#8a4a26" });
-  const p = iso(17.5, 10.5, 5); px(p.x - 3, p.y - 8, 6, 7, "#3f8f4a"); px(p.x - 5, p.y - 6, 3, 4, "#4fa85a");
+movel(12, 5, 1, 1, t => { // luminária de pé, com luz quente
+  const b = iso(12.5, 5.5); px(b.x - 2, b.y - 1, 4, 1, "#2a2a34");
+  caixa(12.47, 5.47, 0.06, 0.06, 24, METAL);
+  caixa(12.25, 5.25, 0.5, 0.5, 6, { topo: "#fff0c0", esq: "#e8c880", dir: "#f0d89a" }, 22);
+  ctx.globalAlpha = 0.16; poligono([iso(11.6, 4.6), iso(13.4, 4.6), iso(13.4, 6.4), iso(11.6, 6.4)], "#ffe0a0"); ctx.globalAlpha = 1;
 });
+movel(17, 10, 1, 1, () => { // planta grande (costela-de-adão)
+  caixa(17.25, 10.25, 0.5, 0.5, 6, { topo: "#e8e8e8", esq: "#b8b8b8", dir: "#cfcfcf" });
+  const p = iso(17.5, 10.5, 6); px(p.x - 4, p.y - 9, 8, 8, "#3f8f4a"); px(p.x - 6, p.y - 6, 3, 4, "#4fa85a"); px(p.x + 3, p.y - 11, 3, 5, "#5fbf6a"); px(p.x - 2, p.y - 7, 1, 2, "#2f7a3a"); px(p.x + 1, p.y - 5, 1, 2, "#2f7a3a");
+});
+
 // ---------- Lugares de trabalho e de descanso ----------
 // dir: para onde o personagem olha ("nx" = gx-, "ny" = gy-, "px" = gx+, "py" = gy+)
 const sentar = (mesa, extra = {}) => ({ gx: MESAS[mesa].cadeira[0], gy: MESAS[mesa].cadeira[1], dir: "ny", mesa, ...extra });
@@ -352,7 +406,7 @@ export const DESCANSO = [
   { gx: 12, gy: 1, dir: "ny", acao: "cafe", fala: "☕ Expresso duplo" },
   { gx: 13, gy: 1, dir: "ny", acao: "cafe", fala: "Cadê o leite?" },
   { gx: 15, gy: 1, dir: "ny", acao: "geladeira", fala: "Quem comeu minha pizza?" },
-  { gx: 13, gy: 6, dir: "ny", acao: "sofa", fala: "Esse episódio é bom!" },
+  { gx: 13, gy: 6, dir: "ny", acao: "videogame", fala: "🎮 Mais uma partida!" },
   { gx: 14, gy: 6, dir: "ny", acao: "sofa", fala: "Mais um e eu volto" },
   { gx: 15, gy: 6, dir: "ny", acao: "sofa" },
   { gx: 17, gy: 3, dir: "ny", acao: "fliperama", fala: "Recorde!" },
@@ -419,7 +473,15 @@ function desenharPisoEParedes(t, notas) {
     // textura: um pontinho de carpete ou um veio de madeira em cada tile
     const c = iso(gx + 0.5, gy + 0.5);
     if (gx < DIVISA && !tapeteChefe) px(c.x - 2, c.y, 1, 1, "#5c6c86");
-    if (gx > DIVISA && !(gx >= 13 && gx <= 16 && gy >= 4 && gy <= 8)) px(c.x - 3, c.y - 1, 4, 1, "#7a5232");
+    const tapeteSala = gx >= 13 && gx <= 16 && gy >= 4 && gy <= 8;
+    if (gx > DIVISA && !tapeteSala) { // tábuas de madeira: emenda no meio do tile e um corte desencontrado
+      poligono([iso(gx, gy + 0.5), iso(gx + 1, gy + 0.5), { x: iso(gx + 1, gy + 0.5).x, y: iso(gx + 1, gy + 0.5).y + 1 }, { x: iso(gx, gy + 0.5).x, y: iso(gx, gy + 0.5).y + 1 }], "#7a5232");
+      const k = iso(gx + (gy % 2 ? 0.3 : 0.7), gy + 0.25); px(k.x, k.y, 1, 2, "#7a5232");
+    }
+    if (tapeteSala) { // tapete com losango no meio e franja nas bordas
+      if ((gx + gy) % 2 === 0) px(c.x - 1, c.y - 1, 3, 1, "#e8d27a");
+      if (gy === 4 || gy === 8) { const f = iso(gx + 0.5, gy === 4 ? gy : gy + 1); for (let i = -3; i <= 3; i += 2) px(f.x + i, f.y + (i >> 1), 1, 1, "#f4f0e0"); }
+    }
     if (tapeteChefe && !(gx === 1 || gx === 5 || gy === 5 || gy === 8)) px(c.x - 1, c.y - 1, 2, 1, "#d4a017");
   }
 
@@ -508,19 +570,56 @@ function desenharPisoEParedes(t, notas) {
     quadroParede("x", g, g + 0.45, z - 4, z, cor); pixelParede("x", g + 0.2, z, 1, 1, "#c0392b");
   }
 
-  // ----- Sala de descanso: máscaras, TV com anime, luzinhas -----
-  pixelParede("x", 11.6, 38, 7, 5, "#c0392b"); pixelParede("x", 11.7, 36, 2, 1, "#fff"); pixelParede("x", 12.05, 36, 2, 1, "#fff");
-  pixelParede("x", 12.6, 39, 7, 7, "#d4a017"); pixelParede("x", 12.7, 36, 2, 1, "#2a2a2a"); pixelParede("x", 13.1, 36, 2, 1, "#2a2a2a");
-  pixelParede("x", 13.6, 40, 7, 8, "#2c3e50"); pixelParede("x", 13.7, 39, 5, 4, "#8ad8ff");
-  quadroParede("x", 16.1, 17.9, 20, 40, "#111111");
-  quadroParede("x", 16.2, 17.8, 22, 38, "#3a6ad8");
-  quadroParede("x", 16.2, 17.8, 22, 26, "#2e8b57");
-  const qt = Math.floor(t / 700) % 3, rosto = naParede("x", 16.75, 34);
-  px(rosto.x, rosto.y, 7, 6, "#f5d0a9"); px(rosto.x - 1, rosto.y - 2, 9, 3, ["#ff8ac2", "#ffd93d", "#7a5cff"][qt]);
-  px(rosto.x + 1, rosto.y + 2, 2, 2, "#2a2a6a"); px(rosto.x + 4, rosto.y + 2, 2, 2, "#2a2a6a");
-  if (qt === 2) { const b = naParede("x", 17.4, 36); px(b.x, b.y, 1, 1, "#fff"); px(b.x - 9, b.y + 3, 1, 1, "#fff"); }
+  // ----- Sala de descanso: armários, letreiro, máscaras, TV, pôsteres, luzinhas -----
+  // armários de cima da copa, com portas
+  quadroParede("x", 12.05, 14.95, 26, 35, "#2a5a5c");
+  for (let i = 0; i < 3; i++) { quadroParede("x", 12.15 + i * 0.95, 12.95 + i * 0.95, 27, 34, "#3a8486"); pixelParede("x", 12.85 + i * 0.95, 30, 1, 2, "#d8dde6"); }
+  // letreiro em neon de xícara de café
+  const liga = Math.floor(t / 3100) % 7 !== 0;
+  for (const [g, z, w, hh] of [[12.4, 44, 7, 1], [12.4, 43, 1, 5], [13.2, 43, 1, 5], [12.4, 39, 7, 1], [13.3, 42, 2, 1], [13.5, 41, 1, 2], [13.3, 40, 2, 1]]) {
+    const p = naParede("x", g, z);
+    if (liga) { ctx.globalAlpha = 0.35; px(p.x - 1, p.y - 1, w + 2, hh + 2, "#4dd0e1"); ctx.globalAlpha = 1; }
+    px(p.x, p.y, w, hh, liga ? "#e8fdff" : "#3a5a62");
+  }
+  for (const g of [12.6, 12.9]) { const p = naParede("x", g, 47 - (Math.floor(t / 400) % 2)); px(p.x, p.y, 1, 2, liga ? "#e8fdff" : "#3a5a62"); }
+  // máscaras de herói (originais), acima da geladeira
+  pixelParede("x", 14.0, 46, 7, 5, "#c0392b"); pixelParede("x", 14.1, 44, 2, 1, "#fff"); pixelParede("x", 14.45, 44, 2, 1, "#fff");
+  pixelParede("x", 15.0, 47, 7, 7, "#d4a017"); pixelParede("x", 15.1, 44, 2, 1, "#2a2a2a"); pixelParede("x", 15.5, 44, 2, 1, "#2a2a2a"); pixelParede("x", 15.3, 42, 2, 2, "#b08010");
+  // TV grande com anime
+  quadroParede("x", 16.1, 17.9, 18, 40, "#111111");
+  quadroParede("x", 16.2, 17.8, 20, 38, "#3a6ad8");
+  quadroParede("x", 16.2, 17.8, 20, 25, "#2e8b57");
+  const qt = Math.floor(t / 700) % 3;
+  if (estado.jogando) {
+    // um jogo de plataforma (original): o bonequinho pula entre plataformas e pega moedas
+    quadroParede("x", 16.2, 17.8, 20, 38, "#5ab8f0");
+    quadroParede("x", 16.2, 17.8, 20, 23, "#3aa35a");
+    quadroParede("x", 16.7, 17.1, 28, 29, "#b8742a"); quadroParede("x", 17.3, 17.6, 31, 32, "#b8742a");
+    const passo = (t / 1600) % 1, salto = Math.round(Math.sin(passo * Math.PI) * 8);
+    const heroi = naParede("x", 16.35 + passo * 1.2, 26 + salto); px(heroi.x, heroi.y, 3, 4, "#e84a4a"); px(heroi.x, heroi.y, 3, 1, "#f5d0a9");
+    if (Math.floor(t / 300) % 2) { const m = naParede("x", 17.45, 35); px(m.x, m.y, 2, 2, "#ffd93d"); }
+    const pts = naParede("x", 16.3, 37); px(pts.x, pts.y, 4, 1, "#ffffff");
+  } else {
+    const rosto = naParede("x", 16.75, 34);
+    px(rosto.x, rosto.y, 7, 6, "#f5d0a9"); px(rosto.x - 1, rosto.y - 2, 9, 3, ["#ff8ac2", "#ffd93d", "#7a5cff"][qt]);
+    px(rosto.x + 1, rosto.y + 2, 2, 2, "#2a2a6a"); px(rosto.x + 4, rosto.y + 2, 2, 2, "#2a2a6a"); px(rosto.x + 1, rosto.y + 2, 1, 1, "#fff"); px(rosto.x + 4, rosto.y + 2, 1, 1, "#fff");
+    if (qt === 1) px(rosto.x + 2, rosto.y + 5, 3, 1, "#c0392b");
+    if (qt === 2) { const b = naParede("x", 17.4, 36); px(b.x, b.y, 1, 1, "#fff"); px(b.x - 9, b.y + 3, 1, 1, "#fff"); px(b.x - 4, b.y - 1, 1, 1, "#fff"); }
+  }
+  // brilho da TV no chão
+  ctx.globalAlpha = 0.07 + 0.03 * (qt % 2); poligono([iso(16, 0.9), iso(18, 0.9), iso(18, 3.4), iso(16, 3.4)], "#7ab8ff"); ctx.globalAlpha = 1;
+  // pôster espacial (original) e pôster de jogo retrô (original) no canto
+  // (ficam na parede de trás, no espaço entre a meia-parede e a copa)
+  quadroParede("x", 11.15, 11.95, 18, 32, "#1b1b2a"); quadroParede("x", 11.25, 11.85, 19, 31, "#1a1440");
+  pixelParede("x", 11.35, 29, 1, 1, "#fff"); pixelParede("x", 11.65, 27, 1, 1, "#fff"); pixelParede("x", 11.45, 25, 3, 3, "#ff8a3a"); pixelParede("x", 11.55, 22, 2, 2, "#e8e8f0");
+  // bandeirolas
+  for (let i = 0; i < 12; i++) {
+    const p = naParede("x", 12.0 + i * 0.5, 49 - (i % 2));
+    px(p.x, p.y, 3, 1, ["#ff6b6b", "#ffd93d", "#4dd0e1", "#b084ff"][i % 4]); px(p.x + 1, p.y + 1, 1, 1, ["#ff6b6b", "#ffd93d", "#4dd0e1", "#b084ff"][i % 4]);
+  }
+  // luzinhas piscando
   for (let i = 0; i < 14; i++) {
-    const p = naParede("x", DIVISA + 0.3 + i * 0.5, 46 - (i % 2));
+    const p = naParede("x", DIVISA + 0.3 + i * 0.5, 44.5 - (i % 2) * 0.8);
     px(p.x, p.y, 2, 2, Math.floor(t / 500 + i) % 3 ? ["#ff6b6b", "#ffd93d", "#6bcb77", "#4d96ff"][i % 4] : "#555");
   }
 }
@@ -533,7 +632,7 @@ function desenharPisoEParedes(t, notas) {
 function desenharRobo(P, ag, t, x, y) {
   const costas = ag.dir === "nx" || ag.dir === "ny";
   const anda = ag.andando ? Math.floor(t / 140) % 2 : 0;
-  const sentado = ag.sentado || ag.pose === "sofa" || ag.pose === "dormir";
+  const sentado = ag.sentado || ag.pose === "sofa" || ag.pose === "videogame" || ag.pose === "dormir";
   const dormindo = ag.pose === "dormir";
   const digita = ag.digitando ? Math.floor(t / 120) % 2 : 0;
   const bx = Math.round(x) - 3, top = Math.round(y) - 14 + (sentado ? 3 : 0);
@@ -573,7 +672,7 @@ export function desenharPessoa(alvo, d, ag, t, x, y) {
   const costas = ag.dir === "nx" || ag.dir === "ny";
   const espelho = ag.dir === "py" || ag.dir === "nx"; // olhando para a esquerda da tela
   const anda = ag.andando ? Math.floor(t / 140) % 2 : 0;
-  const sentado = ag.sentado || ag.pose === "sofa" || ag.pose === "dormir";
+  const sentado = ag.sentado || ag.pose === "sofa" || ag.pose === "videogame" || ag.pose === "dormir";
   const dormindo = ag.pose === "dormir";
   const digita = ag.digitando ? Math.floor(t / 130) % 2 : 0;
   const bx = Math.round(x) - 3, top = Math.round(y) - 14 + (sentado ? 3 : 0);
@@ -625,9 +724,11 @@ export function desenharPessoa(alvo, d, ag, t, x, y) {
 // =============================================================
 // 6. QUADRO COMPLETO
 // =============================================================
-export const estado = { imprimindo: false, correioCheio: false };
+export const estado = { imprimindo: false, correioCheio: false, jogando: false };
 
 export function desenharCena(t, pessoas, equipe, notas) {
+  // alguém sentado no lugar do videogame? então a TV mostra o jogo
+  estado.jogando = pessoas.some(p => p.pose === "videogame" && !p.andando);
   ctx.fillStyle = "#14151d"; ctx.fillRect(0, 0, W, H);
   desenharPisoEParedes(t, notas);
   const itens = [
