@@ -108,6 +108,10 @@ Isso cria a tarefa **"Agente de Vagas"** no Agendador de Tarefas do Windows, par
 horário, a tarefa roda assim que ele ligar. A saída de cada execução vai para
 `logs/agente-AAAA-MM-DD.log`.
 
+**Para rodar na hora:** dê dois cliques em `Buscar vagas agora.cmd`, na pasta do projeto. Ele roda
+o agente, mostra o ranking na tela e manda o e-mail. Não há risco de repetir vagas: a memória
+garante que só as vagas novas vão para o e-mail, mesmo que a tarefa diária também tenha rodado.
+
 Para parar de rodar sozinho:
 
 ```bash
