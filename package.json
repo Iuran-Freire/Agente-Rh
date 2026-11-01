@@ -1,0 +1,24 @@
+{
+  "name": "agente-vagas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "agente": "tsx src/agente.ts",
+    "checar": "tsc"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "dotenv": "latest",
+    "imapflow": "^2.10.0",
+    "mailparser": "^3.14.1",
+    "nodemailer": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "latest",
+    "@types/nodemailer": "^8.0.2",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

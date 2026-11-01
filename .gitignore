@@ -1,0 +1,6 @@
+node_modules/
+# Segredos: nunca vão para o GitHub
+.env
+# Dados pessoais gerados pelo agente
+vagas-vistas.json
+relatorios/
