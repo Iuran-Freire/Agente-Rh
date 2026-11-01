@@ -104,6 +104,22 @@
   footer { margin-top: 24px; color: var(--fraco); font-size: 18px; text-align: center; }
   footer a { color: var(--destaque); }
 
+  /* ---------- Configuração do botão "Rodar agora" ---------- */
+  .config { padding: 18px; }
+  .config input { width: 100%; font: inherit; padding: 8px; background: var(--fundo); color: var(--texto); border: 2px solid var(--borda); margin: 8px 0; }
+  .config ol { padding-left: 22px; margin: 8px 0; }
+  .config a { color: var(--destaque); }
+  .aviso { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--painel); border: 3px solid var(--destaque);
+    padding: 10px 14px; z-index: 10; max-width: calc(100vw - 32px); display: none; }
+
+  /* ---------- Modo "só o escritório" (?escritorio) ---------- */
+  body.so-escritorio .pagina { max-width: none; padding: 0; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  body.so-escritorio header, body.so-escritorio .grade, body.so-escritorio footer, body.so-escritorio .dica { display: none; }
+  body.so-escritorio .cena { border: 0; width: min(100vw, calc(100vh * 256 / 180)); }
+  body.so-escritorio .creditos { display: block; }
+  .creditos { display: none; position: absolute; right: 8px; bottom: 8px; font-family: "Press Start 2P", monospace; font-size: 8px;
+    background: rgba(0,0,0,.7); color: #fff; padding: 6px 8px; text-decoration: none; }
+
   @media (max-width: 760px) {
     .grade { grid-template-columns: 1fr; }
     .numeros { grid-template-columns: repeat(2, 1fr); }
@@ -123,7 +139,9 @@
     </div>
     <div class="botoes">
       <button class="botao" id="btnReproduzir">▶ Reproduzir última execução</button>
+      <a class="botao" id="btnEscritorio" href="?escritorio" target="_blank" rel="noopener">🖥 Só o escritório</a>
       <a class="botao principal" id="btnRodar" target="_blank" rel="noopener">⚡ Rodar agora</a>
+      <button class="botao" id="btnConfig" title="Configurar o botão Rodar agora">⚙</button>
     </div>
   </header>
 
@@ -132,6 +150,7 @@
     <div class="camada" id="placas"></div>
     <div class="camada" id="baloes"></div>
     <div class="faixa"><span class="luz" id="luzModo"></span><span id="textoModo">Carregando…</span></div>
+    <a class="creditos" href="./" target="_blank" rel="noopener">AGENTE-RH · VER PAINEL</a>
   </div>
   <p class="dica">Clique em um personagem para ver a ficha dele.</p>
 
@@ -188,6 +207,23 @@
     <ul id="fTarefas"></ul>
   </div>
 </dialog>
+
+<dialog id="configuracao">
+  <div class="config">
+    <button class="botao fechar" id="fecharConfig" style="float:right">X</button>
+    <h3 style="font-family:'Press Start 2P',monospace;font-size:13px;color:var(--destaque);margin:0 0 10px">RODAR AGORA</h3>
+    <p>Para o botão <b>⚡ Rodar agora</b> disparar o agente direto daqui, cole uma chave do GitHub com permissão <b>só para rodar workflows deste repositório</b>.</p>
+    <ol>
+      <li>Crie em <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+      <li><b>Repository access:</b> Only select repositories → <b>Agente-Rh</b></li>
+      <li><b>Permissions → Actions:</b> Read and write (nenhuma outra)</li>
+    </ol>
+    <input id="campoToken" type="password" autocomplete="off" placeholder="github_pat_...">
+    <p class="fraco" style="font-size:17px">A chave fica salva <b>só neste navegador</b> (localStorage). Ela nunca vai para o repositório nem para outras pessoas. Sem chave, o botão abre a página do GitHub.</p>
+    <div class="botoes"><button class="botao principal" id="salvarToken">Salvar</button><button class="botao" id="apagarToken">Apagar chave</button></div>
+  </div>
+</dialog>
+<div class="aviso" id="aviso"></div>
 
 <script type="module">
 // =============================================================
@@ -629,14 +665,80 @@ async function verificarExecucoes() {
 
 document.getElementById("btnReproduzir").addEventListener("click", reproduzir);
 
+// =============================================================
+// 7. BOTÃO "RODAR AGORA"
+// -------------------------------------------------------------
+// Sem chave: o botão abre a página do workflow no GitHub (só o dono
+// do repositório consegue rodar lá).
+// Com chave: o botão pede ao GitHub para rodar o workflow na hora.
+// A chave fica SÓ no navegador de quem a salvou (localStorage). A
+// página é pública, então ela nunca pode ficar no código.
+// =============================================================
+const CHAVE_TOKEN = "agente-rh:token";
+const URL_DISPARO = `https://api.github.com/repos/${REPO}/actions/workflows/agente.yml/dispatches`;
+function lerToken() { try { return localStorage.getItem(CHAVE_TOKEN) || ""; } catch { return ""; } }
+
+function avisar(texto, ms = 6000) {
+  const a = document.getElementById("aviso");
+  a.textContent = texto; a.style.display = "block";
+  clearTimeout(avisar.t); avisar.t = setTimeout(() => (a.style.display = "none"), ms);
+}
+
+document.getElementById("btnRodar").addEventListener("click", async e => {
+  const token = lerToken();
+  if (!token) return; // sem chave: segue o link normal para o GitHub
+  e.preventDefault();
+  avisar("⏳ Chamando o agente…");
+  try {
+    const r = await fetch(URL_DISPARO, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+      body: JSON.stringify({ ref: "main" }),
+    });
+    if (r.status === 204) {
+      avisar("✅ Agente acordado! Em uns 30 segundos ele sai da sala de descanso e começa a trabalhar.", 9000);
+      falar(agentes.chefe, "Robô, bora trabalhar!", 3000);
+      // consulta o GitHub mais vezes por alguns minutos, para pegar o modo ao vivo logo
+      let vezes = 0; const id = setInterval(() => { verificarExecucoes(); if (++vezes >= 12) clearInterval(id); }, 15000);
+    } else if (r.status === 401) avisar("❌ A chave foi recusada pelo GitHub. Ela pode ter expirado: crie outra no ⚙.");
+    else if (r.status === 403 || r.status === 404) avisar("❌ A chave não tem permissão para rodar workflows do Agente-Rh. Confira o ⚙.");
+    else avisar(`❌ O GitHub respondeu ${r.status}. Tente de novo em instantes.`);
+  } catch { avisar("❌ Sem conexão com o GitHub. Tente de novo."); }
+});
+
+const configuracao = document.getElementById("configuracao");
+document.getElementById("btnConfig").onclick = () => { document.getElementById("campoToken").value = ""; configuracao.showModal(); };
+document.getElementById("fecharConfig").onclick = () => configuracao.close();
+document.getElementById("salvarToken").onclick = () => {
+  const valor = document.getElementById("campoToken").value.trim();
+  if (!valor) return;
+  try { localStorage.setItem(CHAVE_TOKEN, valor); avisar("🔑 Chave salva neste navegador. O ⚡ Rodar agora já dispara o agente direto."); }
+  catch { avisar("❌ Este navegador não deixou salvar (modo anônimo?)."); }
+  configuracao.close(); atualizarBotaoRodar();
+};
+document.getElementById("apagarToken").onclick = () => { try { localStorage.removeItem(CHAVE_TOKEN); } catch {} avisar("Chave apagada deste navegador."); configuracao.close(); atualizarBotaoRodar(); };
+function atualizarBotaoRodar() { document.getElementById("btnRodar").title = lerToken() ? "Dispara o agente agora" : "Abre o workflow no GitHub"; }
+
+// =============================================================
+// 8. MODO "SÓ O ESCRITÓRIO" (?escritorio)
+// -------------------------------------------------------------
+// Um link público só com a cena, em tela cheia, para deixar aberto
+// numa tela ou gravar vídeo. Ele reprisa a última execução de tempos
+// em tempos, para nunca ficar parado.
+// =============================================================
+const soEscritorio = new URLSearchParams(location.search).has("escritorio");
+if (soEscritorio) { document.body.classList.add("so-escritorio"); document.title = "Escritório · Agente-RH"; }
+
 (async function iniciar() {
   entrarOcioso();
   atualizarEquipe(); // monta a lista já no início, mesmo se a animação estiver pausada
+  atualizarBotaoRodar();
   requestAnimationFrame(quadro);
   desenharProxima();
   await carregarDados();
   await verificarExecucoes();
   if (modo !== "aovivo") setTimeout(reproduzir, 5000); // quem chega vê a equipe descansando e depois indo trabalhar
+  if (soEscritorio) setInterval(() => { if (modo === "ocioso") reproduzir(); }, 150000); // reprisa a cada 2,5 min
   setInterval(verificarExecucoes, 90000);
   setInterval(desenharProxima, 60000);
 })();
