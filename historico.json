@@ -1,5 +1,16 @@
 [
   {
+    "inicio": "2026-11-01T22:54:58.055Z",
+    "duracao_s": 29,
+    "passos": 6,
+    "vagas_avaliadas": 3,
+    "novas_enviadas": 0,
+    "melhor": {
+      "titulo": "ANALISTA DE DADOS",
+      "nota": 5.9
+    }
+  },
+  {
     "inicio": "2026-11-01T22:36:16.304Z",
     "duracao_s": 28,
     "passos": 5,
