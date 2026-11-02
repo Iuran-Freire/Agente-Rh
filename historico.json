@@ -1,5 +1,16 @@
 [
   {
+    "inicio": "2026-11-02T02:39:36.894Z",
+    "duracao_s": 30,
+    "passos": 5,
+    "vagas_avaliadas": 2,
+    "novas_enviadas": 1,
+    "melhor": {
+      "titulo": "PESSOA DESENVOLVEDORA JÚNIOR VTEX (FRONT-END)",
+      "nota": 6.6
+    }
+  },
+  {
     "inicio": "2026-11-01T22:55:43.853Z",
     "duracao_s": 38,
     "passos": 7,
